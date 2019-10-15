@@ -4,7 +4,7 @@ import frangel.model.expression.FuncExpression;
 import frangel.utils.Utils;
 
 public class FuncStatement extends Statement {
-    private FuncExpression func;
+    public final FuncExpression func;
 
     public FuncStatement(FuncExpression func, int indent) {
         this.func = func;
@@ -44,7 +44,4 @@ public class FuncStatement extends Statement {
         return new FuncStatement((FuncExpression) func.clone(), getIndent());
     }
 
-    public FuncExpression getFunc() {
-        return func;
-    }
 }

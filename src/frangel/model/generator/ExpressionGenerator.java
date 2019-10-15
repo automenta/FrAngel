@@ -14,11 +14,11 @@ import frangel.utils.ProgramUtils;
 import frangel.utils.Utils;
 
 public class ExpressionGenerator {
-    public enum ExpCategory { FUNC, OP, LIT, VAR };
+    public enum ExpCategory { FUNC, OP, LIT, VAR }
 
     // The Program that owns this ExpressionGenerator. In particular, this Program stores the
     // available variables' names and types.
-    private Program program;
+    private final Program program;
 
     public ExpressionGenerator(Program program) {
         this.program = program;
@@ -33,7 +33,7 @@ public class ExpressionGenerator {
             return null;
         if (exp.getType().equals(int.class) && (exp instanceof LiteralExpression || exp instanceof VarExpression)
                 && Utils.randBoolean(Settings.PROB_REPLACE_WITH_LOOPVAR)) {
-            List<String> loopVarsInScope = new ArrayList<String>(program.getLoopVars());
+            List<String> loopVarsInScope = new ArrayList<>(program.getLoopVars());
             loopVarsInScope.retainAll(program.getInScope());
             if (!loopVarsInScope.isEmpty())
                 return new OpExpression(Op.PLUS, new VarExpression(Utils.randElement(loopVarsInScope), int.class), exp);
@@ -59,22 +59,22 @@ public class ExpressionGenerator {
             Expression right = newOrSimilar(o.getRight());
             if (right == null)
                 return null;
-            return new OpExpression(o.getOp(), left, right);
+            return new OpExpression(o.op(), left, right);
         } else if (exp instanceof FuncExpression) {
             FuncExpression f = (FuncExpression) exp;
-            Expression[] args = new Expression[f.getArgs().length];
+            Expression[] args = new Expression[f.args.length];
             for (int i = 0; i < args.length; i++) {
-                args[i] = newOrSimilar(f.getArgs()[i]);
+                args[i] = newOrSimilar(f.args[i]);
                 if (args[i] == null)
                     return null;
             }
             Expression calledFrom = null;
-            if (f.getCalledFrom() != null) {
-                calledFrom = newOrSimilar(f.getCalledFrom());
+            if (f.callee() != null) {
+                calledFrom = newOrSimilar(f.callee());
                 if (calledFrom == null)
                     return null;
             }
-            FuncExpression e = new FuncExpression(args, calledFrom, f.getData());
+            FuncExpression e = new FuncExpression(args, calledFrom, f.data);
             return e;
         } else {
             System.err.println("Unknown expression class in genSimilarExpression");
@@ -99,7 +99,7 @@ public class ExpressionGenerator {
             List<Expression> list = program.getExpressionFragments().get(type);
             if (list != null && !list.isEmpty()) {
                 Expression randElement = Utils.randElement(list).clone();
-                ProgramUtils.makeVarsCompatible(randElement, new HashMap<String, String>(), program);
+                ProgramUtils.makeVarsCompatible(randElement, new HashMap<>(), program);
                 if (Utils.randBoolean())
                     return randElement;
                 Expression similar = genSimilarExpression(randElement);
@@ -135,7 +135,7 @@ public class ExpressionGenerator {
             if (choice == 0) {
                 // Choose a void-returning method callable by some variable in scope
                 Set<Class<?>> callableClasses = new HashSet<>();
-                for (Class<?> cls : program.getArgTypes())
+                for (Class<?> cls : program.argTypes)
                     if (!cls.isPrimitive() && !cls.isArray())
                         callableClasses.add(cls);
                 for (String localVar : program.getLocalVars().keySet()) {
@@ -168,8 +168,8 @@ public class ExpressionGenerator {
         for (int i = 0; i < Settings.GEN_FUNCTION_TRIES; i++) {
             FunctionData data = Utils.randElement(dataList);
 
-            int numPartitions = data.getArgTypes().length;
-            if (!data.isStatic())
+            int numPartitions = data.argTypes.length;
+            if (!data.isStatic)
                 numPartitions++;
             int[] sizes = null;
             if (numPartitions > 0) {
@@ -178,10 +178,10 @@ public class ExpressionGenerator {
                     continue;
             }
 
-            Expression[] args = new Expression[data.getArgTypes().length];
+            Expression[] args = new Expression[data.argTypes.length];
             boolean shouldContinue = false;
-            for (int j = 0; j < data.getArgTypes().length; j++) {
-                args[j] = genAnyExp(sizes[j], data.getArgTypes()[j], disableFragments);
+            for (int j = 0; j < data.argTypes.length; j++) {
+                args[j] = genAnyExp(sizes[j], data.argTypes[j], disableFragments);
                 if (args[j] == null) {
                     shouldContinue = true;
                     break;
@@ -191,11 +191,11 @@ public class ExpressionGenerator {
                 continue;
 
             Expression callerExp = null;
-            if (!data.isStatic()) {
-                callerExp = genExp(sizes[sizes.length - 1], data.getCallerClass(), calledFrom, disableFragments);
+            if (!data.isStatic) {
+                callerExp = genExp(sizes[sizes.length - 1], data.calleeClass, calledFrom, disableFragments);
                 if (callerExp == null)
                     continue;
-                if (callerExp instanceof LiteralExpression && ((LiteralExpression) callerExp).getLiteral() == null)
+                if (callerExp instanceof LiteralExpression && ((LiteralExpression) callerExp).literal == null)
                     continue;
             }
             FuncExpression exp = new FuncExpression(args, callerExp, data);
@@ -281,7 +281,7 @@ public class ExpressionGenerator {
                         return null;
                     right = genAnyExp(sizes[1], rightType, disableFragments);
                     if (right instanceof LiteralExpression) {
-                        String java = ((LiteralExpression) right).toJava();
+                        String java = right.toJava();
                         if (java.equals("0") || java.equals("0.0"))
                             continue;
                     }
@@ -298,9 +298,9 @@ public class ExpressionGenerator {
 
         if (op == Op.PLUS) {
             // Don't add (String) null
-            if (left instanceof LiteralExpression && ((LiteralExpression) left).getLiteral() == null)
+            if (left instanceof LiteralExpression && ((LiteralExpression) left).literal == null)
                 return null;
-            if (right instanceof LiteralExpression && ((LiteralExpression) right).getLiteral() == null)
+            if (right instanceof LiteralExpression && ((LiteralExpression) right).literal == null)
                 return null;
         }
 
@@ -308,11 +308,11 @@ public class ExpressionGenerator {
     }
 
     public LiteralExpression genLitExp(int size, Class<?> type) {
-        List<Object> choices = new ArrayList<Object>();
-        Map<Class<?>, List<Object>> literals = program.getSynthesisTask().getLiterals();
-        for (Class<?> cls : literals.keySet())
-            if (type.isAssignableFrom(cls))
-                choices.addAll(literals.get(cls));
+        List<Object> choices = new ArrayList<>();
+        Map<Class<?>, List<Object>> literals = program.task.getLiterals();
+        for (Map.Entry<Class<?>, List<Object>> entry : literals.entrySet())
+            if (type.isAssignableFrom(entry.getKey()))
+                choices.addAll(entry.getValue());
         if (choices.size() == 0) {
             if (!type.isPrimitive() && Utils.randBoolean(0.1))
                 return new LiteralExpression(null, type); // null as an object literal is very rarely correct
@@ -322,7 +322,7 @@ public class ExpressionGenerator {
     }
 
     public VarExpression genVarExp(int size, Class<?> type) {
-        List<String> list = new ArrayList<String>();
+        List<String> list = new ArrayList<>();
         for (String var : program.getInScope()) {
             Class<?> varType = program.getVariables().get(var);
             if (Settings.SYPET_MODE && Settings.HARDCODE_POLYMORPHISM && Settings.POLYMORPHISM_MAP.containsKey(type)) {

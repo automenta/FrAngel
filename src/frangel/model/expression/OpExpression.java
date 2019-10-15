@@ -3,8 +3,9 @@ package frangel.model.expression;
 import frangel.model.Precedence;
 
 public class OpExpression extends Expression {
-    public enum Op { PLUS, MINUS, TIMES, DIV, MOD, AND, OR, EQUALS, LESS, LEQ, NOT };
-    public static int numOp() {
+    public enum Op { PLUS, MINUS, TIMES, DIV, MOD, AND, OR, EQUALS, LESS, LEQ, NOT }
+
+	public static int numOp() {
         return Op.values().length;
     }
 
@@ -97,11 +98,8 @@ public class OpExpression extends Expression {
         if (op != other.op || !right.equals(other.right))
             return false;
         if (left == null) {
-            if (other.left != null)
-                return false;
-        } else if (!left.equals(other.left))
-            return false;
-        return true;
+            return other.left == null;
+        } else return left.equals(other.left);
     }
 
     @Override
@@ -136,11 +134,11 @@ public class OpExpression extends Expression {
         return t;
     }
 
-    public Op getOp() {
+    public Op op() {
         return op;
     }
 
-    public void setOp(Op op) {
+    public void op(Op op) {
         this.op = op;
     }
 

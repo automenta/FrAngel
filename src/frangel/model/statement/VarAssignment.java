@@ -5,7 +5,7 @@ import frangel.model.expression.VarExpression;
 import frangel.utils.Utils;
 
 public class VarAssignment extends Statement {
-    private VarExpression var;
+    public final VarExpression var;
     private Expression value;
 
     public VarAssignment(VarExpression var, Expression value, int indent) {
@@ -52,10 +52,6 @@ public class VarAssignment extends Statement {
     @Override
     public Statement clone() {
         return new VarAssignment((VarExpression) var.clone(), value.clone(), getIndent());
-    }
-
-    public VarExpression getVar() {
-        return var;
     }
 
     public Expression getValue() {

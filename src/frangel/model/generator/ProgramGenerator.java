@@ -13,7 +13,7 @@ import frangel.utils.Utils;
 
 public class ProgramGenerator {
 
-    private SynthesisTask task;
+    private final SynthesisTask task;
 
     private Map<Class<?>, List<Expression>> expressionFragments;
     private List<Statement> statementFragments;
@@ -76,7 +76,7 @@ public class ProgramGenerator {
     }
 
     void generateStatements(Program p, int size) {
-        p.setStatements(p.getStatementGenerator().genBlock(size, 1));
+        p.setStatements(p.statementGenerator.genBlock(size, 1));
     }
 
     // Returns true if successful
@@ -84,11 +84,11 @@ public class ProgramGenerator {
         if (!p.returns())
             return true;
         for (int i = 0; i < Settings.GEN_RETURN_TRIES; i++) {
-            p.setReturnVal(p.getExpressionGenerator().genAnyExp(size, p.getReturnType(), false));
+            p.setReturnVal(p.expressionGenerator.genAnyExp(size, p.returnType, false));
             if (p.getReturnVal() != null)
                 return true;
         }
-        p.setReturnVal(p.getExpressionGenerator().genVarExp(size, p.getReturnType()));
+        p.setReturnVal(p.expressionGenerator.genVarExp(size, p.returnType));
         return p.getReturnVal() != null;
     }
 }

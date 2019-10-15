@@ -20,17 +20,17 @@ public class BenchmarkUtils {
 
     @SafeVarargs
     public static <T> List<T> makeList(T... elements) {
-        return new ArrayList<T>(Arrays.asList(elements));
+        return new ArrayList<>(Arrays.asList(elements));
     }
 
     @SafeVarargs
     public static <T> Queue<T> makeQueue(T... elements) {
-        return new ArrayDeque<T>(Arrays.asList(elements));
+        return new ArrayDeque<>(Arrays.asList(elements));
     }
 
     @SafeVarargs
     public static <T> Set<T> makeSet(T... elements) {
-        return new HashSet<T>(Arrays.asList(elements));
+        return new HashSet<>(Arrays.asList(elements));
     }
 
     public static boolean equalsDouble(double d1, double d2) {

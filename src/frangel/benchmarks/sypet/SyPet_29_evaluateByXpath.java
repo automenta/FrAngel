@@ -36,7 +36,7 @@ public enum SyPet_29_evaluateByXpath implements TaskCreator {
 
         task.addExample(new Example()
                 .setInputs(() -> new Object[] { new File("benchmarkFiles/sypet_29_doc.xml"), "/html/body/div[@id='container']", XPathConstants.NODE })
-                .setOutputChecker((Object node) -> node != null && node instanceof Node && ((Node) node).getNodeName().equals("div")));
+                .setOutputChecker((Object node) -> node instanceof Node && ((Node) node).getNodeName().equals("div")));
 
         return task;
     }

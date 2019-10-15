@@ -61,7 +61,7 @@ public enum BenchmarkGroup {
     }
 
     public List<SynthesisTask> getTasks() {
-        creators.sort((TaskCreator c1, TaskCreator c2) -> c1.getClass().getName().compareTo(c2.getClass().getName()));
+        creators.sort(Comparator.comparing((TaskCreator c) -> c.getClass().getName()));
         List<SynthesisTask> tasks = new ArrayList<>();
         for (TaskCreator creator : creators) {
             SynthesisTask task = creator.createTask();
@@ -72,7 +72,7 @@ public enum BenchmarkGroup {
     }
 
     public List<Class<?>> getCreatorClasses() {
-        creators.sort((TaskCreator c1, TaskCreator c2) -> c1.getClass().getName().compareTo(c2.getClass().getName()));
+        creators.sort(Comparator.comparing((TaskCreator c) -> c.getClass().getName()));
         List<Class<?>> list = new ArrayList<>();
         for (TaskCreator creator : creators)
             list.add(creator.getClass());

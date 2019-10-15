@@ -8,7 +8,7 @@ import frangel.utils.Utils;
 
 public class IfStatement extends Statement {
     private Expression condition;
-    private List<Statement> body;
+    public final List<Statement> body;
     private Expression rememberedCondition;
 
     public IfStatement(Expression condition, List<Statement> body, int indent) {
@@ -100,10 +100,6 @@ public class IfStatement extends Statement {
 
     public void rememberCondition(Expression condition) {
         this.rememberedCondition = condition.clone();
-    }
-
-    public List<Statement> getBody() {
-        return body;
     }
 
     public boolean isAngelic() {

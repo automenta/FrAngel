@@ -8,10 +8,10 @@ import java.util.Map;
 import frangel.Settings;
 
 public class Environment {
-    private Map<String, Object> variables;
+    private final Map<String, Object> variables;
 
     public Environment() {
-        variables = new HashMap<String, Object>();
+        variables = new HashMap<>();
     }
 
     public Object get(String name) throws Exception {

@@ -11,7 +11,7 @@ public class UnitTester {
 
     public static boolean test(SynthesisTask task, Class<?> cls, String methodName) {
         Class<?>[] inputTypes = task.getInputTypes();
-        Method m = null;
+        Method m;
 
         System.out.println("Testing " + methodName + " for task " + task.getName() + "...");
 
@@ -42,9 +42,9 @@ public class UnitTester {
 
         int numPassed = 0;
         List<Example> examples = task.getExamples();
-        for (int ei = 0; ei < examples.size(); ei++) {
+        for (Example value : examples) {
             System.out.print("\n");
-            Example example = examples.get(ei);
+            Example example = value;
             String exampleName = example.getNameWithIndex();
 
             Object[] inputs = example.getInputs();
@@ -65,7 +65,7 @@ public class UnitTester {
                 printExampleFailure(task, exampleName, origInputs);
                 System.out.println();
                 System.out.println("      - Got output: " +
-                        Colors.color(Colors.BRIGHT_RED, task.objectToString(output)));
+                    Colors.color(Colors.BRIGHT_RED, task.objectToString(output)));
                 if (example.hasOutputChecker())
                     System.out.println("        Rejected by output checker.");
                 else
@@ -79,20 +79,20 @@ public class UnitTester {
                     pass = false;
                     System.out.println();
                     System.out.println("      - Modified " + task.getInputName(i) + ": "
-                            + Colors.color(Colors.BRIGHT_RED, task.objectToString(inputs[i])));
+                        + Colors.color(Colors.BRIGHT_RED, task.objectToString(inputs[i])));
                     boolean rejectedByChecker = false;
                     Object expected = null;
-                    if (!task.inputsMutable() && !example.hasModifiedInput(i+1))
+                    if (!task.inputsMutable() && !example.hasModifiedInput(i + 1))
                         expected = origInputs[i];
-                    else if (example.hasModifiedInputChecker(i+1))
+                    else if (example.hasModifiedInputChecker(i + 1))
                         rejectedByChecker = true;
                     else
-                        expected = example.getModifiedInput(i+1);
+                        expected = example.getModifiedInput(i + 1);
                     if (rejectedByChecker)
                         System.out.println("        Rejected by modified input checker.");
                     else
                         System.out.println("        Expected:  " + String.join("", Collections.nCopies(task.getInputName(i).length(), " ")) +
-                                Colors.color(Colors.CYAN, task.objectToString(expected)));
+                            Colors.color(Colors.CYAN, task.objectToString(expected)));
                 }
             }
 

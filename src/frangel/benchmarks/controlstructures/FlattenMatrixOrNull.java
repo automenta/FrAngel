@@ -1,6 +1,7 @@
 package frangel.benchmarks.controlstructures;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 import frangel.Example;
@@ -59,8 +60,7 @@ public enum FlattenMatrixOrNull implements TaskCreator {
         List<Object> ans = new ArrayList<>();
         if (mat != null)
             for (Object[] arr : mat)
-                for (Object o : arr)
-                    ans.add(o);
+				ans.addAll(Arrays.asList(arr));
         return ans;
     }
 }

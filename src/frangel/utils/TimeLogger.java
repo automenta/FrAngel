@@ -7,9 +7,9 @@ import frangel.Settings;
 public class TimeLogger {
     private static final boolean CAREFUL_LOGGING = false;
 
-    private static Map<String, Long> totals = new HashMap<String, Long>();
-    private static Map<String, Long> last = new HashMap<String, Long>(); // -1 if not started
-    private static Set<String> current = new HashSet<String>();
+    private static final Map<String, Long> totals = new HashMap<>();
+    private static final Map<String, Long> last = new HashMap<>(); // -1 if not started
+    private static final Set<String> current = new HashSet<>();
     private static long timerTime = 0;
 
     public static void start(String name) {
@@ -45,13 +45,8 @@ public class TimeLogger {
             return;
         System.out.println("------------------------------\n\nTiming breakdown:\n");
         totals.put("TimeLogger", timerTime);
-        List<String> sortedNames = new ArrayList<String>(totals.keySet());
-        Collections.sort(sortedNames, new Comparator<String>() {
-            @Override
-            public int compare(final String a, String b) {
-                return totals.get(b).compareTo(totals.get(a));
-            }
-        });
+        List<String> sortedNames = new ArrayList<>(totals.keySet());
+        sortedNames.sort((a, b) -> totals.get(b).compareTo(totals.get(a)));
         for (String name : sortedNames)
             System.out.printf("%9.2f sec, %5.1f%%: %s\n", totals.get(name) / 1.0e9, 100.0 * totals.get(name) / totals.get("Total"), name);
     }

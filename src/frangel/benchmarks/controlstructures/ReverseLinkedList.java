@@ -6,6 +6,8 @@ import frangel.Tag;
 import frangel.benchmarks.BenchmarkGroup;
 import frangel.benchmarks.TaskCreator;
 
+import java.util.Objects;
+
 class LinkedListNode {
     int value;
     LinkedListNode next;
@@ -22,7 +24,7 @@ class LinkedListNode {
         if (!(o instanceof LinkedListNode))
             return false;
         LinkedListNode other = (LinkedListNode) o;
-        return value == other.value && (next == null ? other.next == null : next.equals(other.next));
+        return value == other.value && (Objects.equals(next, other.next));
     }
     @Override
     public String toString() {

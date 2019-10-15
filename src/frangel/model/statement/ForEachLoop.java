@@ -8,9 +8,9 @@ import frangel.utils.Utils;
 
 public class ForEachLoop extends Statement {
     private String varName;
-    private Expression container;
-    private List<Statement> body;
-    private Class<?> varType;
+    public final Expression container;
+    public final List<Statement> body;
+    public final Class<?> varType;
 
     public ForEachLoop(Class<?> varType, String varName, Expression container, List<Statement> body, int indent) {
         this.varType = varType;
@@ -73,20 +73,8 @@ public class ForEachLoop extends Statement {
         return new ForEachLoop(varType, varName, container.clone(), newBody, getIndent());
     }
 
-    public Class<?> getVarType() {
-        return varType;
-    }
-
     public String getVarName() {
         return varName;
-    }
-
-    public List<Statement> getBody() {
-        return body;
-    }
-
-    public Expression getContainer() {
-        return container;
     }
 
     public void setVarName(String varName) {

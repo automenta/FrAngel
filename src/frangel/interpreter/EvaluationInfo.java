@@ -3,7 +3,7 @@ package frangel.interpreter;
 public class EvaluationInfo {
     private boolean isError;
     private Object returnValue;
-    private String angelicCodePath;
+    private final String angelicCodePath;
     private int angelicCodePathIndex;
     private String actualCodePath;
     private int loopIterations;

@@ -8,21 +8,22 @@ import java.util.function.Supplier;
 import frangel.utils.Utils;
 
 public class Example {
+    public static final Object[] EmptyObjArray = new Object[0];
     private String name;
     private String nameWithIndex;
 
     private Supplier<Object[]> inputSupplier;
     private Object output;
     private Predicate<Object> outputChecker;
-    private Map<Integer, Object> modifiedInputs; // indices are 0-based internally, 1-based in console output and public API
-    private Map<Integer, Predicate<Object>> modifiedInputCheckers;
+    private final Map<Integer, Object> modifiedInputs; // indices are 0-based internally, 1-based in console output and public API
+    private final Map<Integer, Predicate<Object>> modifiedInputCheckers;
 
     private SynthesisTask task; // Holds inputTypes, outputType, inputsMutable, equalityTesters
 
     private boolean outputGiven; // Force user to provide output (even if null) if outputType is not void
 
     private static Object[] emptyInputs() {
-        return new Object[0];
+        return EmptyObjArray;
     }
 
     public Example() {
@@ -124,12 +125,13 @@ public class Example {
             }
         }
 
-        for (int i : modifiedInputs.keySet()) {
+        for (Map.Entry<Integer, Object> entry : modifiedInputs.entrySet()) {
+            int i = entry.getKey();
             if (i >= task.getNumInputs())
                 throw new SynthesisTaskException(exampleName + " requires modifying input " + (i+1) + ", but there are only " + task.getNumInputs() + " inputs");
-            if (!Utils.typeMatch(inputTypes[i], modifiedInputs.get(i)))
+            if (!Utils.typeMatch(inputTypes[i], entry.getValue()))
                 throw new SynthesisTaskException(exampleName + " has modified input " + (i+1) + " of type "
-                        + Utils.getTypeString(modifiedInputs.get(i)) + " (" + inputTypes[i].getCanonicalName() + " expected)");
+                        + Utils.getTypeString(entry.getValue()) + " (" + inputTypes[i].getCanonicalName() + " expected)");
         }
         for (int i : modifiedInputCheckers.keySet()) {
             if (i >= task.getNumInputs())

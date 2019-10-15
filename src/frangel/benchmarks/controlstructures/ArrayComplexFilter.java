@@ -60,7 +60,9 @@ public enum ArrayComplexFilter implements TaskCreator {
     static void solution(String[] arr, Set<String> filter) {
         for (int i = 0; i < arr.length; i++)
             for (String token : filter)
-                if (arr[i].contains(token))
+                if (arr[i].contains(token)) {
                     arr[i] = "";
+                    break;
+                }
     }
 }

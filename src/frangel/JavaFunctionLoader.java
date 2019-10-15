@@ -23,10 +23,10 @@ public class JavaFunctionLoader {
     private static FunctionData keySetData = null;
 
     private static Set<Class<?>> getArrayClasses(SynthesisTask task, Set<Class<?>> arrayTypes) {
-        Set<Class<?>> relevant = new HashSet<Class<?>>(arrayTypes);
+        Set<Class<?>> relevant = new HashSet<>(arrayTypes);
         relevant.addAll(task.getClasses());
 
-        Set<Class<?>> ans = new HashSet<Class<?>>();
+        Set<Class<?>> ans = new HashSet<>();
         for (Class<?> cls : relevant) {
             while (cls.isArray()) {
                 ans.add(cls);
@@ -44,7 +44,7 @@ public class JavaFunctionLoader {
         supers = new HashMap<>();
         possibleCallingTypes = new HashMap<>();
 
-        Set<Class<?>> returnedArrayTypes = new HashSet<Class<?>>();
+        Set<Class<?>> returnedArrayTypes = new HashSet<>();
 
         try {
             for (Class<?> c : task.getClasses()) {
@@ -73,10 +73,10 @@ public class JavaFunctionLoader {
                     FunctionData data = new FunctionData(m, parameterType);
                     if (data.isValid()) {
                         allData.add(data);
-                        if (!data.isStatic())
+                        if (!data.isStatic)
                             possibleCallingTypes.put(m, getCallerTypes(m, supers.get(c)));
-                        if (data.returns() && data.getReturnType().isArray())
-                            returnedArrayTypes.add(data.getReturnType());
+                        if (data.returns && data.returnType.isArray())
+                            returnedArrayTypes.add(data.returnType);
                     }
                     if (Map.class.isAssignableFrom(c) && m.getName().equals("keySet") && m.getParameterTypes().length == 0)
                         keySetData = data;
@@ -110,8 +110,8 @@ public class JavaFunctionLoader {
                             FunctionData data = new FunctionData(f, parameterType);
                             if (data.isValid())
                                 allData.add(data);
-                            if (data.returns() && data.getReturnType().isArray())
-                                returnedArrayTypes.add(data.getReturnType());
+                            if (data.returns && data.returnType.isArray())
+                                returnedArrayTypes.add(data.returnType);
                         }
                     }
                 }
@@ -128,9 +128,9 @@ public class JavaFunctionLoader {
             System.err.println("(from JavaFunctionLoader)");
         }
 
-        functionsByReturnType = new HashMap<Class<?>, List<FunctionData>>();
+        functionsByReturnType = new HashMap<>();
         for (FunctionData data : allData) {
-            Class<?> returnType = data.getReturnType();
+            Class<?> returnType = data.returnType;
             Set<Class<?>> returnSuperTypes = supers.get(returnType);
             if (returnSuperTypes == null) {
                 returnSuperTypes = Utils.getSuperTypes(returnType);
@@ -144,23 +144,23 @@ public class JavaFunctionLoader {
             }
         }
 
-        allMethods = new ArrayList<FunctionData>();
+        allMethods = new ArrayList<>();
         for (FunctionData d : allData)
-            if (d.getKind() == FunctionData.Kind.METHOD)
+            if (d.kind == FunctionData.Kind.METHOD)
                 allMethods.add(d);
 
         // Sort all lists (for reproducibility)
         Collections.sort(allData);
         Collections.sort(allMethods);
-        for (Class<?> cls : functionsByReturnType.keySet())
-            Collections.sort(functionsByReturnType.get(cls));
+        for (List<FunctionData> functionData : functionsByReturnType.values())
+            Collections.sort(functionData);
 
         TimeLogger.stop("JavaFunction.resetData()");
     }
 
     private static void addFunctionByReturnType(Class<?> type, FunctionData data) {
         if (!functionsByReturnType.containsKey(type))
-            functionsByReturnType.put(type, new ArrayList<FunctionData>());
+            functionsByReturnType.put(type, new ArrayList<>());
 //        if (!functionsByReturnType.get(type).contains(data))
         functionsByReturnType.get(type).add(data);
     }
@@ -179,9 +179,7 @@ public class JavaFunctionLoader {
         for (Class<?> c : new ArrayList<>(callerTypes)) {
             if (!callerTypes.contains(c))
                 continue; // c was already removed
-            for (Class<?> other : new ArrayList<>(callerTypes))
-                if (other != c && c.isAssignableFrom(other))
-                    callerTypes.remove(other);
+            callerTypes.removeIf(other -> other != c && c.isAssignableFrom(other));
         }
         return callerTypes;
     }
@@ -205,9 +203,9 @@ public class JavaFunctionLoader {
         if (voidMethods == null)
             return null;
         for (FunctionData data : voidMethods) {
-            if (data.isStatic())
+            if (data.isStatic)
                 continue;
-            if (callableClasses.contains(data.getCallerClass()))
+            if (callableClasses.contains(data.calleeClass))
                 voidCallable.add(data);
         }
         return voidCallable;

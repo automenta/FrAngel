@@ -7,7 +7,7 @@ public abstract class Expression {
 
     // Includes terminating newline
     public String toJava() {
-        StringBuilder sb = new StringBuilder();
+        StringBuilder sb = new StringBuilder(2048);
         toJava(sb);
         return sb.toString();
     }

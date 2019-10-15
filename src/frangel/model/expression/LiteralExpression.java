@@ -4,7 +4,7 @@ import frangel.model.Precedence;
 import frangel.utils.Utils;
 
 public class LiteralExpression extends Expression {
-    private Object literal; // This must be immutable or null
+    public final Object literal; // This must be immutable or null
 
     public LiteralExpression(Object literal, Class<?> type) {
         this.literal = literal;
@@ -63,7 +63,4 @@ public class LiteralExpression extends Expression {
         return this; // LiteralExpression is immutable
     }
 
-    public Object getLiteral() {
-        return literal;
-    }
 }

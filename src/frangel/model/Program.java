@@ -13,30 +13,30 @@ import frangel.model.statement.Statement;
 import frangel.utils.Utils;
 
 public class Program {
-    private String name;
-    private String[] argNames;
-    private Class<?>[] argTypes;
-    private Class<?> returnType;
-    private Map<Class<?>, Class<?>> parameterTypeMap;
-    private SynthesisTask task;
+    public final String name;
+    public final String[] argNames;
+    public final Class<?>[] argTypes;
+    public final Class<?> returnType;
+    public final Map<Class<?>, Class<?>> parameterTypeMap;
+    public final SynthesisTask task;
 
     private List<Statement> statements;
     private Expression returnVal; // null if doesn't return
 
-    private Map<String, Class<?>> variables; // variable name to type (all variables)
-    private Map<Class<?>, List<String>> typeToVars; // type to list of variables of that type
-    private Set<String> argVars; // copy of argNames but in Set form
-    private Map<String, Expression> localVars; // local variables (varX), name to initial value
-    private Set<String> loopVars; // for-loop counters (iX), by default declared outside the loop
-    private Set<String> elemVars; // for-each loop variables (elemX), always declared in the loop
-    private Set<String> inScope; // variables in scope
-    private Set<String> loopVarsDeclaredInLoop; // for-loop variables declared in the loop
+    public final Map<String, Class<?>> variables; // variable name to type (all variables)
+    public final Map<Class<?>, List<String>> typeToVars; // type to list of variables of that type
+    public final Set<String> argVars; // copy of argNames but in Set form
+    public final Map<String, Expression> localVars; // local variables (varX), name to initial value
+    public final Set<String> loopVars; // for-loop counters (iX), by default declared outside the loop
+    public final Set<String> elemVars; // for-each loop variables (elemX), always declared in the loop
+    public final Set<String> inScope; // variables in scope
+    public final Set<String> loopVarsDeclaredInLoop; // for-loop variables declared in the loop
 
     private boolean angelic; // whether to generate angelic conditions
 
     // Every Program has its own ExpressionGenerator and StatementGenerator, both of which have a link back to this
-    private ExpressionGenerator expressionGenerator;
-    private StatementGenerator statementGenerator;
+    public final ExpressionGenerator expressionGenerator;
+    public final StatementGenerator statementGenerator;
 
     private boolean useFragments = false;
     private Map<Class<?>, List<Expression>> expressionFragments = null;
@@ -56,7 +56,7 @@ public class Program {
 
         returnType = task.getOutputType();
         parameterTypeMap = task.getParameterTypeMap();
-        statements = new ArrayList<Statement>();
+        statements = new ArrayList<>();
 
         variables = new HashMap<>();
         typeToVars = new HashMap<>();
@@ -81,11 +81,7 @@ public class Program {
 
     private void addVariable(String name, Class<?> type) {
         variables.put(name, type);
-        List<String> list = typeToVars.get(type);
-        if (list == null) {
-            list = new ArrayList<String>();
-            typeToVars.put(type, list);
-        }
+        List<String> list = typeToVars.computeIfAbsent(type, k -> new ArrayList<>());
         list.add(name);
     }
 
@@ -196,7 +192,7 @@ public class Program {
         Program clone = new Program(task, angelic);
         clone.variables.putAll(variables);
         for (Map.Entry<Class<?>, List<String>> entry : typeToVars.entrySet())
-            clone.typeToVars.put(entry.getKey(), new ArrayList<String>(entry.getValue()));
+            clone.typeToVars.put(entry.getKey(), new ArrayList<>(entry.getValue()));
         for (Map.Entry<String, Expression> entry : localVars.entrySet())
             clone.localVars.put(entry.getKey(), entry.getValue().clone());
         clone.loopVars.addAll(loopVars);
@@ -242,22 +238,22 @@ public class Program {
             sb.append(Utils.getParameterizedName(argTypes[i], parameterTypeMap)).append(' ').append(argNames[i]);
         }
         sb.append(") {\n");
-        for (String name : new TreeSet<String>(localVars.keySet())) {
+        for (String name : new TreeSet<>(localVars.keySet())) {
             Class<?> type = variables.get(name);
             sb.append(Settings.INDENT).append(Utils.getParameterizedName(type, parameterTypeMap)).append(' ').append(name).append(" = ");
             localVars.get(name).toJava(sb);
             sb.append(";\n");
         }
-        for (String name : new TreeSet<String>(loopVars)) {
+        for (String name : new TreeSet<>(loopVars)) {
             if (loopVarsDeclaredInLoop.contains(name))
                 continue; // Declared in the loop
             sb.append(Settings.INDENT).append("int ").append(name).append(" = 0;\n");
         }
         for (Statement s : statements)
             s.toJava(sb);
-        if (getReturnVal() != null) {
+        if (returnVal != null) {
             sb.append(Settings.INDENT).append("return ");
-            getReturnVal().toJava(sb);
+            returnVal.toJava(sb);
             sb.append(";\n");
         }
         sb.append("}");
@@ -278,40 +274,20 @@ public class Program {
      */
     public String encode() {
         StringBuilder sb = new StringBuilder();
-        for (String name : new TreeSet<String>(localVars.keySet())) {
+        for (String name : new TreeSet<>(localVars.keySet())) {
             sb.append("=").append(name).append("%");
             localVars.get(name).encode(sb);
         }
         for (Statement s : statements)
             s.encode(sb);
-        if (getReturnVal() != null)
-            getReturnVal().encode(sb);
+        if (returnVal != null)
+            returnVal.encode(sb);
         String s = sb.toString();
         return s;
     }
 
     public String getName() {
         return name;
-    }
-
-    public String[] getArgNames() {
-        return argNames;
-    }
-
-    public Class<?>[] getArgTypes() {
-        return argTypes;
-    }
-
-    public Set<String> getArgVars() {
-        return argVars;
-    }
-
-    public Class<?> getReturnType() {
-        return returnType;
-    }
-
-    public Map<Class<?>, Class<?>> getParameterTypeMap() {
-        return parameterTypeMap;
     }
 
     public boolean returns() {
@@ -342,14 +318,6 @@ public class Program {
         this.angelic = angelic;
     }
 
-    public ExpressionGenerator getExpressionGenerator() {
-        return expressionGenerator;
-    }
-
-    public StatementGenerator getStatementGenerator() {
-        return statementGenerator;
-    }
-
     public boolean useFragments() {
         return useFragments;
     }
@@ -366,7 +334,4 @@ public class Program {
         return statementFragments;
     }
 
-    public SynthesisTask getSynthesisTask() {
-        return task;
-    }
 }

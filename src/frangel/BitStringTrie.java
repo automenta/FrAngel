@@ -19,7 +19,7 @@ public class BitStringTrie {
         }
     }
 
-    private Node root;
+    private final Node root;
     private int size;
 
     public BitStringTrie() {
@@ -29,7 +29,8 @@ public class BitStringTrie {
 
     public void add(String bitstring) {
         Node cur = root;
-        for (int i = 0; i < bitstring.length(); i++) {
+        int len = bitstring.length();
+        for (int i = 0; i < len; i++) {
             boolean bit = bitstring.charAt(i) != '0';
             Node next = cur.getChild(bit);
             cur = (next == null ? cur.createChild(bit) : next);
@@ -45,7 +46,8 @@ public class BitStringTrie {
         Node cur = root;
         if (cur.isLeaf)
             return true;
-        for (int i = 0; i < bitstring.length(); i++) {
+        int len = bitstring.length();
+        for (int i = 0; i < len; i++) {
             cur = cur.getChild(bitstring.charAt(i) != '0');
             if (cur == null)
                 return false;

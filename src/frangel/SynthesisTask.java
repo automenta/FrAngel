@@ -71,7 +71,7 @@ public class SynthesisTask {
         literals.put(float.class, new ArrayList<>(Arrays.asList(0.0f, 1.0f, 2.0f)));
         literals.put(boolean.class, new ArrayList<>(Arrays.asList(true, false)));
         literals.put(String.class, new ArrayList<>(Arrays.asList("", null)));
-        literals.put(Object.class, new ArrayList<>(Arrays.asList((Object) null)));
+        literals.put(Object.class, new ArrayList<>(Collections.singletonList(null)));
     }
 
     private void checkJavaIdentifier(String name) {
@@ -128,7 +128,7 @@ public class SynthesisTask {
                 checkNameClashes(name);
             }
             inputNames = Arrays.copyOf(names, names.length);
-            if (new HashSet<String>(Arrays.asList(inputNames)).size() != inputNames.length)
+            if (new HashSet<>(Arrays.asList(inputNames)).size() != inputNames.length)
                 throw new SynthesisTaskException("Duplicate input names");
         }
         return this;
@@ -170,7 +170,7 @@ public class SynthesisTask {
         }
         if (type.equals(char.class)) { // also add String literals for char literals (indexOf takes int/String but not char)
             for (Object literal : literals)
-                addLiterals(String.class, "" + literal);
+                addLiterals(String.class, String.valueOf(literal));
         }
         return this;
     }
@@ -196,15 +196,13 @@ public class SynthesisTask {
         return this;
     }
 
-    public SynthesisTask addExample(Example example) {
+    public void addExample(Example example) {
         examples.add(example);
-        return this;
     }
 
     public SynthesisTask addExamples(Example... examples) {
         if (examples != null)
-            for (Example e : examples)
-                this.examples.add(e);
+            this.examples.addAll(Arrays.asList(examples));
         return this;
     }
 
@@ -220,9 +218,8 @@ public class SynthesisTask {
     }
 
     @SuppressWarnings("unchecked")
-    public <T> SynthesisTask addToString(Class<?> type, Function<T, String> toStringFunc) {
+    public <T> void addToString(Class<?> type, Function<T, String> toStringFunc) {
         toStrings.put(type, (Object x) -> (x == null) ? "null" : toStringFunc.apply((T) x));
-        return this;
     }
 
     public SynthesisTask makeInputsImmutable() {
@@ -283,8 +280,7 @@ public class SynthesisTask {
     }
 
     private void inferRelevantTypes() {
-        Queue<Class<?>> q = new ArrayDeque<>();
-        q.addAll(Arrays.asList(inputTypes));
+        Queue<Class<?>> q = new ArrayDeque<>(Arrays.asList(inputTypes));
         q.add(outputType);
         if (declaringClass != null)
             q.add(declaringClass);
@@ -295,7 +291,7 @@ public class SynthesisTask {
         for (Class<?> cls : new Class<?>[] {List.class, Set.class, Map.class, Queue.class})
             if (!parameterTypeMap.containsKey(cls))
                 parameterTypeMap.put(cls, Object.class);
-        Set<Class<?>> relevantClasses = new HashSet<Class<?>>();
+        Set<Class<?>> relevantClasses = new HashSet<>();
         while (!q.isEmpty()) {
             Class<?> cls = q.poll();
             if (cls.equals(void.class))
@@ -350,7 +346,7 @@ public class SynthesisTask {
                         if (Modifier.isPublic(con.getModifiers())) {
                             con.setAccessible(true);
                             if (con.getParameterCount() == 0)
-                                con.newInstance(new Object[0]);
+                                con.newInstance();
                         }
                     }
                 }
@@ -372,9 +368,9 @@ public class SynthesisTask {
         if (toStrings.containsKey(type))
             return toStrings.get(type).apply(obj);
 
-        for (Class<?> cls : toStrings.keySet())
-            if (cls.isAssignableFrom(type))
-                return toStrings.get(cls).apply(obj);
+        for (Map.Entry<Class<?>, Function<Object, String>> entry : toStrings.entrySet())
+            if (entry.getKey().isAssignableFrom(type))
+                return entry.getValue().apply(obj);
 
         if (type.isArray()) {
             StringBuilder sb = new StringBuilder("[");
@@ -392,9 +388,9 @@ public class SynthesisTask {
             StringBuilder sb = new StringBuilder(type.getSimpleName()).append('{');
             String sep = "";
             Map<?, ?> map = (Map<?, ?>) obj;
-            for (Object key : map.keySet()) {
-                Object value = map.get(key);
-                sb.append(sep).append(objectToString(key)).append(": ").append(objectToString(value));
+            for (Map.Entry<?, ?> entry : map.entrySet()) {
+                Object value = entry.getValue();
+                sb.append(sep).append(objectToString(entry.getKey())).append(": ").append(objectToString(value));
                 sep = ", ";
             }
             sb.append('}');
@@ -432,8 +428,8 @@ public class SynthesisTask {
     private <T> String classMapToString(Map<Class<?>, T> map) {
         String s = "[";
         String sep = "";
-        for (Class<?> c : map.keySet()) {
-            s += sep + c.getCanonicalName() + "=" + map.get(c).toString();
+        for (Map.Entry<Class<?>, T> entry : map.entrySet()) {
+            s += sep + entry.getKey().getCanonicalName() + "=" + entry.getValue().toString();
             sep = ", ";
         }
         s += "]";
@@ -478,7 +474,7 @@ public class SynthesisTask {
     private Class<?>[] classesCachedArray;
     public Class<?>[] getClassesCachedArray() {
         if (classesCachedArray == null)
-            classesCachedArray = classes.toArray(new Class<?>[classes.size()]);
+            classesCachedArray = classes.toArray(new Class<?>[0]);
         return classesCachedArray;
     }
     public String[] getPackages() {

@@ -51,7 +51,7 @@ public enum FindIdentityIgnoringCase implements TaskCreator {
 
         task.addExample(new Example()
                 .setInputs(() -> new Object[] { new HashMap<>(map2) })
-                .setOutput(BenchmarkUtils.makeSet(new String("A"), new String("B"))));
+                .setOutput(BenchmarkUtils.makeSet("A", "B")));
 
         final Map<String, String> map3 = new HashMap<>();
         map3.put("B", "A");
@@ -76,9 +76,9 @@ public enum FindIdentityIgnoringCase implements TaskCreator {
 
     static Set<String> solution(Map<String, String> map) {
         Set<String> ans = new HashSet<>();
-        for (String key : map.keySet())
-            if (map.get(key).equalsIgnoreCase(key))
-                ans.add(key);
+        for (Map.Entry<String, String> entry : map.entrySet())
+            if (entry.getValue().equalsIgnoreCase(entry.getKey()))
+                ans.add(entry.getKey());
         return ans;
     }
 }

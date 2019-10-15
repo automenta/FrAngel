@@ -1,4 +1,4 @@
-// A minimal Java program that uses FrAngel to synthesize an "add" operation.
+package demo;// A minimal Java program that uses FrAngel to synthesize an "add" operation.
 
 import frangel.Example;
 import frangel.FrAngel;

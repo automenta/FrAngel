@@ -16,14 +16,14 @@ import frangel.model.statement.*;
 import frangel.utils.*;
 
 public class FrAngel {
-    private SynthesisTask task;
+    public final SynthesisTask task;
 
     private Map<BitSet, Program> fragmentPrograms;
     private Map<Class<?>, List<Expression>> expressionFragments;
     private List<Statement> statementFragments;
 
-    private Set<String> nonAngelicPrograms;
-    private Set<String> angelicPrograms;
+    private final Set<String> nonAngelicPrograms;
+    private final Set<String> angelicPrograms;
 
     private int genCount, runCount, genAngelicCount, runAngelicCount, genNoAngelicCount, runNoAngelicCount;
 
@@ -65,12 +65,12 @@ public class FrAngel {
         this.task = task;
 
         if (Settings.MINE_FRAGMENTS) {
-            fragmentPrograms = new HashMap<BitSet, Program>();
-            expressionFragments = new HashMap<Class<?>, List<Expression>>();
-            statementFragments = new ArrayList<Statement>();
+            fragmentPrograms = new HashMap<>();
+            expressionFragments = new HashMap<>();
+            statementFragments = new ArrayList<>();
         }
-        nonAngelicPrograms = new HashSet<String>();
-        angelicPrograms = new HashSet<String>();
+        nonAngelicPrograms = new HashSet<>();
+        angelicPrograms = new HashSet<>();
         genCount = runCount = genAngelicCount = runAngelicCount = genNoAngelicCount = runNoAngelicCount = 0;
     }
 
@@ -97,7 +97,7 @@ public class FrAngel {
         while (!Utils.timeout(timeout)) {
             printDebugInfo();
 
-            boolean useAngelic = Utils.randBoolean() ? false : Settings.USE_ANGELIC_CONDITIONS; // sometimes generate concrete conditions
+            boolean useAngelic = !Utils.randBoolean() && Settings.USE_ANGELIC_CONDITIONS; // sometimes generate concrete conditions
             Program p = generator.generateProgram(useAngelic);
             int numAngelic = ProgramUtils.numAngelic(p);
             boolean isAngelic = numAngelic > 0;
@@ -144,7 +144,7 @@ public class FrAngel {
                 passed = mineFragments(p, passed);
 
             if (passed.cardinality() == numExamples) {
-                if (!ProgramUtils.getUsedVars(p).containsAll(p.getArgVars()))
+                if (!ProgramUtils.getUsedVars(p).containsAll(p.argVars))
                     continue;
 
                 // last check
@@ -166,7 +166,7 @@ public class FrAngel {
                     Cleaner cleaner = new Cleaner(ans, task, allExamples);
                     cleaner.deepClean(Utils.timeSince(start), timeout);
 
-                    if (!ProgramUtils.getUsedVars(ans).containsAll(ans.getArgVars())) {
+                    if (!ProgramUtils.getUsedVars(ans).containsAll(ans.argVars)) {
                         System.err.println("Deep-cleaning produced bad program (reverting to uncleaned version):\n" + ans.toJava());
                         ans = p;
                     }
@@ -190,14 +190,14 @@ public class FrAngel {
             if (Settings.VERBOSE > 1) {
                 if (Settings.MINE_FRAGMENTS) {
                     System.out.println("Keeping " + fragmentPrograms.size() + " fragment programs:\n");
-                    for (BitSet passed : fragmentPrograms.keySet()) {
-                        Program p = fragmentPrograms.get(passed);
-                        System.out.println("Program for " + passed + ":\n" + p.toJava() + "\n");
+                    for (Map.Entry<BitSet, Program> entry : fragmentPrograms.entrySet()) {
+                        Program p = entry.getValue();
+                        System.out.println("Program for " + entry.getKey() + ":\n" + p.toJava() + "\n");
                     }
 
-                    for (Class<?> cls : expressionFragments.keySet()) {
-                        System.out.println("Fragments of type " + cls.getName() + ":");
-                        for (Expression e : expressionFragments.get(cls))
+                    for (Map.Entry<Class<?>, List<Expression>> entry : expressionFragments.entrySet()) {
+                        System.out.println("Fragments of type " + entry.getKey().getName() + ":");
+                        for (Expression e : entry.getValue())
                             System.out.println("  " + e.toJava());
                     }
                     if (!statementFragments.isEmpty())
@@ -228,14 +228,14 @@ public class FrAngel {
             }
 
             if (s instanceof FuncStatement) {
-                FuncExpression exp = ((FuncStatement) s).getFunc();
+                FuncExpression exp = ((FuncStatement) s).func;
                 if (!ProgramUtils.containsVar(exp))
                     statements.remove(i--);
             } else if (s instanceof ForLoop) {
                 ForLoop f = (ForLoop) s;
                 if (!f.isAngelic() && ProgramUtils.size(f.getCondition()) > Settings.MAX_LINE_SIZE)
                     return false;
-                List<Statement> body = f.getBody();
+                List<Statement> body = f.body;
                 preprocessBlock(body);
                 if (body.isEmpty() && (f.isAngelic() || !ProgramUtils.containsVar(f.getCondition())))
                     statements.remove(i--);
@@ -243,12 +243,12 @@ public class FrAngel {
                 IfStatement is = (IfStatement) s;
                 if (!is.isAngelic() && ProgramUtils.size(is.getCondition()) > Settings.MAX_LINE_SIZE)
                     return false;
-                List<Statement> body = is.getBody();
+                List<Statement> body = is.body;
                 preprocessBlock(body);
                 if (body.isEmpty() && (is.isAngelic() || !ProgramUtils.containsVar(is.getCondition())))
                     statements.remove(i--);
             } else if (s instanceof ForEachLoop) {
-                List<Statement> body = ((ForEachLoop) s).getBody();
+                List<Statement> body = ((ForEachLoop) s).body;
                 preprocessBlock(body);
                 if (body.isEmpty())
                     statements.remove(i--);
@@ -260,9 +260,7 @@ public class FrAngel {
     private boolean preprocessProgram(Program p) {
         if (p.returns() && ProgramUtils.size(p.getReturnVal()) > Settings.MAX_LINE_SIZE)
             return false;
-        if (!preprocessBlock(p.getStatements()))
-            return false;
-        return true;
+        return preprocessBlock(p.getStatements());
     }
 
     private boolean skipProgram(Program p, int numAngelic) {
@@ -309,7 +307,7 @@ public class FrAngel {
         BitStringTrie used = new BitStringTrie();
         for (int numTrue = 0; used.size() < Settings.NUM_ANGELIC_CODE_PATHS; numTrue++) {
             TimeLogger.start("FrAngel.findCodePaths()");
-            List<String> paths = new ArrayList<String>();
+            List<String> paths = new ArrayList<>();
             findCodePaths(numTrue, new StringBuilder(), paths, used, Settings.NUM_ANGELIC_CODE_PATHS - used.size());
             if (paths.isEmpty()) {
                 TimeLogger.stop("FrAngel.findCodePaths()");
@@ -394,11 +392,11 @@ public class FrAngel {
 
     private BitSet resolveSingleCondition(Program p, AngelicStatementInfo info, BitSet passed, long timeout) {
         long start = System.nanoTime();
-        HashSet<String> used = new HashSet<String>();
+        HashSet<String> used = new HashSet<>();
 
         Statement angelicStatement = info.getStatement();
 
-        Expression rememberedCondition = null;
+        Expression rememberedCondition;
         if (angelicStatement instanceof IfStatement)
             rememberedCondition = ((IfStatement) angelicStatement).getRememberedCondition();
         else
@@ -425,10 +423,10 @@ public class FrAngel {
         boolean triedFalse = false;
         int i;
         for (i = 0; !Utils.timeout(timeout); i++) {
-            Expression condition = p.getExpressionGenerator().genAnyExp(Utils.randInt(1, Settings.MAX_RESOLVE_COND_SIZE), boolean.class, false);
+            Expression condition = p.expressionGenerator.genAnyExp(Utils.randInt(1, Settings.MAX_RESOLVE_COND_SIZE), boolean.class, false);
 
             if (condition instanceof LiteralExpression) {
-                boolean literal = (Boolean) ((LiteralExpression) condition).getLiteral();
+                boolean literal = (Boolean) ((LiteralExpression) condition).literal;
                 if (literal) {
                     if (triedTrue)
                         continue;
@@ -474,10 +472,10 @@ public class FrAngel {
     }
 
     private static class AngelicStatementInfo implements Comparable<AngelicStatementInfo> {
-        private Statement statement;
-        private int depth;
-        private boolean isLoop;
-        private Set<String> inScopeVars;
+        private final Statement statement;
+        private final int depth;
+        private final boolean isLoop;
+        private final Set<String> inScopeVars;
         AngelicStatementInfo(Statement s, int depth, Set<String> inScopeVars) {
             statement = s;
             this.depth = depth;
@@ -510,25 +508,25 @@ public class FrAngel {
                 inScopeVars.add(f.getVarName());
                 if (f.isAngelic())
                     list.add(new AngelicStatementInfo(f, depth, inScopeVars));
-                findAngelic(f.getBody(), depth + 1, inScopeVars, list);
+                findAngelic(f.body, depth + 1, inScopeVars, list);
                 inScopeVars.remove(f.getVarName());
             } else if (s instanceof IfStatement) {
                 IfStatement i = (IfStatement) s;
                 if (i.isAngelic())
                     list.add(new AngelicStatementInfo(i, depth, inScopeVars));
-                findAngelic(i.getBody(), depth + 1, inScopeVars, list);
+                findAngelic(i.body, depth + 1, inScopeVars, list);
             } else if (s instanceof ForEachLoop) {
                 ForEachLoop f = (ForEachLoop) s;
                 inScopeVars.add(f.getVarName());
-                findAngelic(f.getBody(), depth + 1, inScopeVars, list);
+                findAngelic(f.body, depth + 1, inScopeVars, list);
                 inScopeVars.remove(f.getVarName());
             }
         }
     }
 
     private List<AngelicStatementInfo> findAngelic(Program angelicProgram) {
-        List<AngelicStatementInfo> list = new ArrayList<AngelicStatementInfo>();
-        findAngelic(angelicProgram.getStatements(), 0, new HashSet<String>(), list);
+        List<AngelicStatementInfo> list = new ArrayList<>();
+        findAngelic(angelicProgram.getStatements(), 0, new HashSet<>(), list);
         Collections.sort(list);
         return list;
     }
@@ -616,7 +614,7 @@ public class FrAngel {
             }
 
             // Find strict subsets of passed
-            for (BitSet otherPassed : new HashSet<BitSet>(fragmentPrograms.keySet())) {
+            for (BitSet otherPassed : new HashSet<>(fragmentPrograms.keySet())) {
                 if (otherPassed.cardinality() >= passed.cardinality())
                     continue;
                 BitSet copy = (BitSet) passed.clone();
@@ -636,16 +634,16 @@ public class FrAngel {
         TimeLogger.start("FrAngel.reloadFragments()");
         expressionFragments.clear();
         statementFragments.clear();
-        List<Expression> expressions = new ArrayList<Expression>();
-        List<Statement> statements = new ArrayList<Statement>();
+        List<Expression> expressions = new ArrayList<>();
+        List<Statement> statements = new ArrayList<>();
 
-        for (BitSet passed : fragmentPrograms.keySet()) {
-            Program p = fragmentPrograms.get(passed);
+        for (Map.Entry<BitSet, Program> entry : fragmentPrograms.entrySet()) {
+            Program p = entry.getValue();
             if (Settings.VERBOSE > 2)
-                System.out.println("\nProgram for examples (0-indexed): " + passed + "\n" + p.toJava());
+                System.out.println("\nProgram for examples (0-indexed): " + entry.getKey() + "\n" + p.toJava());
             ProgramUtils.getFragments(p, expressions, statements);
         }
-        Set<String> set = new HashSet<String>();
+        Set<String> set = new HashSet<>();
         for (Expression e : expressions) {
             StringBuilder sb = new StringBuilder();
             e.encode(sb);
@@ -654,7 +652,7 @@ public class FrAngel {
                 set.add(encoding);
                 Class<?> type = e.getType();
                 if (!expressionFragments.containsKey(type))
-                    expressionFragments.put(type, new ArrayList<Expression>());
+                    expressionFragments.put(type, new ArrayList<>());
                 expressionFragments.get(type).add(e);
             }
         }
@@ -671,9 +669,6 @@ public class FrAngel {
         TimeLogger.stop("FrAngel.reloadFragments()");
     }
 
-    public SynthesisTask getSynthesisTask() {
-        return task;
-    }
     public Map<BitSet, Program> getFragmentPrograms() {
         return fragmentPrograms;
     }

@@ -2,14 +2,16 @@
 
 package frangel;
 
+import java.io.StringReader;
 import java.util.*;
 
 import frangel.benchmarks.BenchmarkGroup;
 import frangel.benchmarks.TaskCreator;
-import frangel.benchmarks.controlstructures.*;
-import frangel.benchmarks.geometry.*;
-import frangel.benchmarks.github.*;
-import frangel.benchmarks.sypet.*;
+import org.apache.commons.math.linear.SingularValueDecompositionImpl;
+import org.joda.time.DateTime;
+import org.joda.time.LocalDate;
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
 
 @SuppressWarnings("unused") // unused imports allow changing TASK_CREATOR quickly
 public class Settings {
@@ -71,17 +73,17 @@ public class Settings {
     public static Map<Class<?>, Set<Class<?>>> POLYMORPHISM_MAP = null;
     public static void loadSyPetPolymorphismMap() {
         if (POLYMORPHISM_MAP == null) {
-            POLYMORPHISM_MAP = new HashMap<Class<?>, Set<Class<?>>>() {{ // from SyPet's CONFIG.json
+            POLYMORPHISM_MAP = new HashMap<>() {{ // from SyPet's CONFIG.json
                 put(java.awt.Shape.class, new HashSet<>(Arrays.asList(java.awt.geom.Ellipse2D.class, java.awt.geom.Rectangle2D.class)));
-                put(org.joda.time.ReadablePartial.class, new HashSet<>(Arrays.asList(org.joda.time.LocalDate.class)));
-                put(org.joda.time.ReadableInstant.class, new HashSet<>(Arrays.asList(org.joda.time.DateTime.class)));
-                put(org.w3c.dom.Node.class, new HashSet<>(Arrays.asList(org.w3c.dom.Element.class)));
-                put(org.jsoup.nodes.Element.class, new HashSet<>(Arrays.asList(org.jsoup.nodes.Document.class)));
-                put(java.io.Reader.class, new HashSet<>(Arrays.asList(java.io.StringReader.class)));
-                put(org.joda.time.base.AbstractDateTime.class, new HashSet<>(Arrays.asList(org.joda.time.DateTime.class)));
-                put(java.lang.Object.class, new HashSet<>(Arrays.asList(org.w3c.dom.Document.class)));
-                put(org.joda.time.field.AbstractReadableInstantFieldProperty.class, new HashSet<>(Arrays.asList(org.joda.time.DateTime.Property.class)));
-                put(org.apache.commons.math.linear.SingularValueDecomposition.class, new HashSet<>(Arrays.asList(org.apache.commons.math.linear.SingularValueDecompositionImpl.class)));
+                put(org.joda.time.ReadablePartial.class, new HashSet<>(Collections.singletonList(LocalDate.class)));
+                put(org.joda.time.ReadableInstant.class, new HashSet<>(Collections.singletonList(DateTime.class)));
+                put(org.w3c.dom.Node.class, new HashSet<>(Collections.singletonList(Element.class)));
+                put(org.jsoup.nodes.Element.class, new HashSet<>(Collections.singletonList(org.jsoup.nodes.Document.class)));
+                put(java.io.Reader.class, new HashSet<>(Collections.singletonList(StringReader.class)));
+                put(org.joda.time.base.AbstractDateTime.class, new HashSet<>(Collections.singletonList(DateTime.class)));
+                put(java.lang.Object.class, new HashSet<>(Collections.singletonList(Document.class)));
+                put(org.joda.time.field.AbstractReadableInstantFieldProperty.class, new HashSet<>(Collections.singletonList(DateTime.Property.class)));
+                put(org.apache.commons.math.linear.SingularValueDecomposition.class, new HashSet<>(Collections.singletonList(SingularValueDecompositionImpl.class)));
             }};
         }
     }

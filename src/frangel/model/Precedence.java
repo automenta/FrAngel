@@ -15,7 +15,7 @@ public enum Precedence {
     DOT(16),
     ATOMIC(17); // Like a variable name or string literal
 
-    private int level;
+    private final int level;
     Precedence(int l) {
         level = l;
     }

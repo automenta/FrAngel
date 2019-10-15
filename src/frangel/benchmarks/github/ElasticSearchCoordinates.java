@@ -72,7 +72,7 @@ public enum ElasticSearchCoordinates implements TaskCreator {
     // from elasticsearch-master/server/src/main/java/org/elasticsearch/common/geo/builders/ShapeBuilder.java
     // changed all access modifiers to "public" (so FrAngel can use)
     public static final class Edge {
-        public Coordinate coordinate; // coordinate of the start point
+        public final Coordinate coordinate; // coordinate of the start point
         public Edge next; // next segment
         public Coordinate intersect; // potential intersection with dateline
         public int component = -1; // id of the component this edge belongs to

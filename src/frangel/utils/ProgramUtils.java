@@ -21,10 +21,10 @@ public class ProgramUtils {
         ans.add(exp);
         if (exp instanceof FuncExpression) {
             FuncExpression f = (FuncExpression) exp;
-            if (f.getCalledFrom() != null)
-                getSubExpressions(f.getCalledFrom(), ans);
-            for (int i = 0; i < f.getArgs().length; i++)
-                getSubExpressions(f.getArgs()[i], ans);
+            if (f.callee() != null)
+                getSubExpressions(f.callee(), ans);
+            for (int i = 0; i < f.args.length; i++)
+                getSubExpressions(f.args[i], ans);
         } else if (exp instanceof OpExpression) {
             OpExpression o = (OpExpression) exp;
             if (o.getLeft() != null)
@@ -49,13 +49,13 @@ public class ProgramUtils {
     private static void getSubStatements(Statement s, List<Statement> ans) {
         ans.add(s);
         if (s instanceof IfStatement) {
-            for (Statement inner : ((IfStatement) s).getBody())
+            for (Statement inner : ((IfStatement) s).body)
                 getSubStatements(inner, ans);
         } else if (s instanceof ForLoop) {
-            for (Statement inner : ((ForLoop) s).getBody())
+            for (Statement inner : ((ForLoop) s).body)
                 getSubStatements(inner, ans);
         } else if (s instanceof ForEachLoop) {
-            for (Statement inner : ((ForEachLoop) s).getBody())
+            for (Statement inner : ((ForEachLoop) s).body)
                 getSubStatements(inner, ans);
         } else if (s instanceof VarAssignment || s instanceof FuncStatement) {
             // nothing else
@@ -76,16 +76,16 @@ public class ProgramUtils {
         if (s instanceof VarAssignment) {
             getFragments(((VarAssignment) s).getValue(), expressions);
         } else if (s instanceof FuncStatement) {
-            getFragments(((FuncStatement) s).getFunc(), expressions); // repetitive
+            getFragments(((FuncStatement) s).func, expressions); // repetitive
         } else if (s instanceof IfStatement) {
-            for (Statement inner : ((IfStatement) s).getBody())
+            for (Statement inner : ((IfStatement) s).body)
                 getFragments(inner, expressions, statements);
         } else if (s instanceof ForLoop) {
-            for (Statement inner : ((ForLoop) s).getBody())
+            for (Statement inner : ((ForLoop) s).body)
                 getFragments(inner, expressions, statements);
         } else if (s instanceof ForEachLoop) {
             //getFragments(((ForEachLoop) s).getContainer(), expressions); // This doesn't work with map.keySet()
-            for (Statement inner : ((ForEachLoop) s).getBody())
+            for (Statement inner : ((ForEachLoop) s).body)
                 getFragments(inner, expressions, statements);
         } else {
             System.err.println("Unknown statement class in getFragments()");
@@ -96,10 +96,10 @@ public class ProgramUtils {
         expressions.add(exp);
         if (exp instanceof FuncExpression) {
             FuncExpression f = (FuncExpression) exp;
-            if (f.getCalledFrom() != null)
-                getFragments(f.getCalledFrom(), expressions);
-            for (int i = 0; i < f.getArgs().length; i++)
-                getFragments(f.getArgs()[i], expressions);
+            if (f.callee() != null)
+                getFragments(f.callee(), expressions);
+            for (int i = 0; i < f.args.length; i++)
+                getFragments(f.args[i], expressions);
         } else if (exp instanceof OpExpression) {
             OpExpression o = (OpExpression) exp;
             if (o.getLeft() != null)
@@ -119,7 +119,7 @@ public class ProgramUtils {
     }
 
     public static Set<String> getUsedVars(Program p, boolean includeLoopCounter) {
-        Set<String> usedVars = new HashSet<String>();
+        Set<String> usedVars = new HashSet<>();
         for (Statement s : p.getStatements())
             getUsedVars(s, usedVars, includeLoopCounter);
         if (p.returns())
@@ -130,28 +130,28 @@ public class ProgramUtils {
     public static void getUsedVars(Statement s, Set<String> usedVars, boolean includeLoopCounter) {
         if (s instanceof VarAssignment) {
             VarAssignment v = (VarAssignment) s;
-            getUsedVars(v.getVar(), usedVars);
+            getUsedVars(v.var, usedVars);
             getUsedVars(v.getValue(), usedVars);
         } else if (s instanceof FuncStatement) {
-            getUsedVars(((FuncStatement) s).getFunc(), usedVars);
+            getUsedVars(((FuncStatement) s).func, usedVars);
         } else if (s instanceof IfStatement) {
             IfStatement i = (IfStatement) s;
             if (!i.isAngelic())
                 getUsedVars(i.getCondition(), usedVars);
-            for (Statement b : i.getBody())
+            for (Statement b : i.body)
                 getUsedVars(b, usedVars, includeLoopCounter);
         } else if (s instanceof ForLoop) {
             ForLoop f = (ForLoop) s;
             if (!f.isAngelic())
                 getUsedVars(f.getCondition(), usedVars);
-            for (Statement b : f.getBody())
+            for (Statement b : f.body)
                 getUsedVars(b, usedVars, includeLoopCounter);
             if (includeLoopCounter && !f.isWhileLoop())
                 usedVars.add(f.getVarName());
         } else if (s instanceof ForEachLoop) {
             ForEachLoop f = (ForEachLoop) s;
-            getUsedVars(f.getContainer(), usedVars);
-            for (Statement b : f.getBody())
+            getUsedVars(f.container, usedVars);
+            for (Statement b : f.body)
                 getUsedVars(b, usedVars, includeLoopCounter);
             usedVars.add(f.getVarName());
         } else {
@@ -166,9 +166,9 @@ public class ProgramUtils {
             usedVars.add(((VarExpression) e).getName());
         } else if (e instanceof FuncExpression) {
             FuncExpression f = (FuncExpression) e;
-            if (!f.getData().isStatic())
-                getUsedVars(f.getCalledFrom(), usedVars);
-            for (Expression a : f.getArgs())
+            if (!f.data.isStatic)
+                getUsedVars(f.callee(), usedVars);
+            for (Expression a : f.args)
                 getUsedVars(a, usedVars);
         } else if (e instanceof OpExpression) {
             OpExpression o = (OpExpression) e;
@@ -187,10 +187,10 @@ public class ProgramUtils {
             return true;
         } else if (e instanceof FuncExpression) {
             FuncExpression f = (FuncExpression) e;
-            if (!f.getData().isStatic())
-                if (containsVar(f.getCalledFrom()))
+            if (!f.data.isStatic)
+                if (containsVar(f.callee()))
                     return true;
-            for (Expression a : f.getArgs())
+            for (Expression a : f.args)
                 if (containsVar(a))
                     return true;
             return false;
@@ -207,8 +207,9 @@ public class ProgramUtils {
     }
 
     public static void replaceVars(Program p, Map<String, String> replacements) {
-        for (String oldName : replacements.keySet()) {
-            String newName = replacements.get(oldName);
+        for (Map.Entry<String, String> entry : replacements.entrySet()) {
+            String oldName = entry.getKey();
+            String newName = entry.getValue();
             Utils.replaceKeyIfPresent(p.getVariables(), oldName, newName);
             Utils.replaceKeyIfPresent(p.getLocalVars(), oldName, newName);
             Utils.replaceIfPresent(p.getLoopVars(), oldName, newName);
@@ -230,10 +231,10 @@ public class ProgramUtils {
     private static void replaceVars(Statement s, Map<String, String> replacements) {
         if (s instanceof VarAssignment) {
             VarAssignment v = (VarAssignment) s;
-            replaceVars(v.getVar(), replacements);
+            replaceVars(v.var, replacements);
             replaceVars(v.getValue(), replacements);
         } else if (s instanceof FuncStatement) {
-            replaceVars(((FuncStatement) s).getFunc(), replacements);
+            replaceVars(((FuncStatement) s).func, replacements);
         } else if (s instanceof ForLoop) {
             ForLoop f = (ForLoop) s;
             String name = f.getVarName();
@@ -243,21 +244,21 @@ public class ProgramUtils {
                 replaceVars(f.getCondition(), replacements);
             if (f.getRememberedCondition() != null)
                 replaceVars(f.getRememberedCondition(), replacements);
-            replaceVars(f.getBody(), replacements);
+            replaceVars(f.body, replacements);
         } else if (s instanceof IfStatement) {
             IfStatement is = (IfStatement) s;
             if (!is.isAngelic())
                 replaceVars(is.getCondition(), replacements);
             if (is.getRememberedCondition() != null)
                 replaceVars(is.getRememberedCondition(), replacements);
-            replaceVars(is.getBody(), replacements);
+            replaceVars(is.body, replacements);
         } else if (s instanceof ForEachLoop) {
             ForEachLoop f = (ForEachLoop) s;
             String name = f.getVarName();
             if (replacements.containsKey(name))
                 f.setVarName(replacements.get(name));
-            replaceVars(f.getBody(), replacements);
-            replaceVars(f.getContainer(), replacements);
+            replaceVars(f.body, replacements);
+            replaceVars(f.container, replacements);
         } else {
             System.err.println("Unknown statement type in replaceVars: " + s.getClass().getName());
         }
@@ -273,9 +274,9 @@ public class ProgramUtils {
                 v.setName(replacements.get(name));
         } else if (e instanceof FuncExpression) {
             FuncExpression f = (FuncExpression) e;
-            if (!f.getData().isStatic())
-                replaceVars(f.getCalledFrom(), replacements);
-            for (Expression a : f.getArgs())
+            if (!f.data.isStatic)
+                replaceVars(f.callee(), replacements);
+            for (Expression a : f.args)
                 replaceVars(a, replacements);
         } else if (e instanceof OpExpression) {
             OpExpression o = (OpExpression) e;
@@ -319,9 +320,9 @@ public class ProgramUtils {
             }
         } else if (e instanceof FuncExpression) {
             FuncExpression f = (FuncExpression) e;
-            if (!f.getData().isStatic())
-                makeVarsCompatible(f.getCalledFrom(), replacements, p);
-            for (Expression a : f.getArgs())
+            if (!f.data.isStatic)
+                makeVarsCompatible(f.callee(), replacements, p);
+            for (Expression a : f.args)
                 makeVarsCompatible(a, replacements, p);
         } else if (e instanceof OpExpression) {
             OpExpression o = (OpExpression) e;
@@ -336,10 +337,10 @@ public class ProgramUtils {
     public static void makeVarsCompatible(Statement s, Map<String, String> replacements, Program p) {
         if (s instanceof VarAssignment) {
             VarAssignment v = (VarAssignment) s;
-            makeVarsCompatible(v.getVar(), replacements, p);
+            makeVarsCompatible(v.var, replacements, p);
             makeVarsCompatible(v.getValue(), replacements, p);
         } else if (s instanceof FuncStatement) {
-            makeVarsCompatible(((FuncStatement) s).getFunc(), replacements, p);
+            makeVarsCompatible(((FuncStatement) s).func, replacements, p);
         } else if (s instanceof ForLoop) {
             ForLoop f = (ForLoop) s;
             String name = f.getVarName();
@@ -355,7 +356,7 @@ public class ProgramUtils {
                 makeVarsCompatible(f.getCondition(), replacements, p);
             if (f.getRememberedCondition() != null)
                 makeVarsCompatible(f.getRememberedCondition(), replacements, p);
-            for (Statement inner : f.getBody())
+            for (Statement inner : f.body)
                 makeVarsCompatible(inner, replacements, p);
         } else if (s instanceof IfStatement) {
             IfStatement is = (IfStatement) s;
@@ -363,7 +364,7 @@ public class ProgramUtils {
                 makeVarsCompatible(is.getCondition(), replacements, p);
             if (is.getRememberedCondition() != null)
                 makeVarsCompatible(is.getRememberedCondition(), replacements, p);
-            for (Statement inner : is.getBody())
+            for (Statement inner : is.body)
                 makeVarsCompatible(inner, replacements, p);
         } else if (s instanceof ForEachLoop) {
             ForEachLoop f = (ForEachLoop) s;
@@ -371,13 +372,13 @@ public class ProgramUtils {
             if (p.getVariables().containsKey(name)) {
                 String replacementName = p.getFreshElemVar();
                 f.setVarName(replacementName);
-                p.addElemVar(replacementName, f.getVarType());
+                p.addElemVar(replacementName, f.varType);
                 replacements.put(name, replacementName);
             } else {
-                p.addElemVar(name, f.getVarType());
+                p.addElemVar(name, f.varType);
             }
-            makeVarsCompatible(f.getContainer(), replacements, p);
-            for (Statement inner : f.getBody())
+            makeVarsCompatible(f.container, replacements, p);
+            for (Statement inner : f.body)
                 makeVarsCompatible(inner, replacements, p);
         } else {
             System.err.println("Unknown statement type in makeVarsCompatible: " + s.getClass().getName());
@@ -398,20 +399,20 @@ public class ProgramUtils {
             return 2 + size(((VarAssignment) s).getValue()); // 1 for equals sign, 1 for variable name
         } else if (s instanceof FuncStatement) {
             // FuncStatement is just a wrapper around FuncExpression, don't count the FuncStatement
-            return size(((FuncStatement) s).getFunc());
+            return size(((FuncStatement) s).func);
         } else if (s instanceof ForLoop) {
             ForLoop f = (ForLoop) s;
             int size = 1;
             if (!f.isAngelic())
                 size += size(f.getCondition());
-            for (Statement b : f.getBody())
+            for (Statement b : f.body)
                 size += size(b);
             return size;
         } else if (s instanceof ForEachLoop) {
             ForEachLoop f = (ForEachLoop) s;
             int size = 1;
-            size += size(f.getContainer());
-            for (Statement b : f.getBody())
+            size += size(f.container);
+            for (Statement b : f.body)
                 size += size(b);
             return size;
         } else if (s instanceof IfStatement) {
@@ -419,7 +420,7 @@ public class ProgramUtils {
             int size = 1;
             if (!i.isAngelic())
                 size += size(i.getCondition());
-            for (Statement b : i.getBody())
+            for (Statement b : i.body)
                 size += size(b);
             return size;
         } else {
@@ -439,9 +440,9 @@ public class ProgramUtils {
         } else if (exp instanceof FuncExpression) {
             FuncExpression f = (FuncExpression) exp;
             int size = 1;
-            if (f.getCalledFrom() != null)
-                size += size(f.getCalledFrom());
-            for (Expression a : f.getArgs())
+            if (f.callee() != null)
+                size += size(f.callee());
+            for (Expression a : f.args)
                 size += size(a);
             return size;
         } else {
@@ -471,13 +472,13 @@ public class ProgramUtils {
         if (s instanceof VarAssignment || s instanceof FuncStatement) {
             // nothing else
         } else if (s instanceof ForLoop) {
-            for (Statement b : ((ForLoop) s).getBody())
+            for (Statement b : ((ForLoop) s).body)
                 max = Math.max(max, searchMatch(fragment, b));
         } else if (s instanceof ForEachLoop) {
-            for (Statement b : ((ForEachLoop) s).getBody())
+            for (Statement b : ((ForEachLoop) s).body)
                 max = Math.max(max, searchMatch(fragment, b));
         } else if (s instanceof IfStatement) {
-            for (Statement b : ((IfStatement) s).getBody())
+            for (Statement b : ((IfStatement) s).body)
                 max = Math.max(max, searchMatch(fragment, b));
             return max;
         } else {
@@ -489,21 +490,21 @@ public class ProgramUtils {
 
     private static int searchMatch(Expression fragment, Statement s) {
         if (s instanceof VarAssignment) {
-            return Math.max(searchMatch(fragment, ((VarAssignment) s).getVar()), searchMatch(fragment, ((VarAssignment) s).getValue()));
+            return Math.max(searchMatch(fragment, ((VarAssignment) s).var), searchMatch(fragment, ((VarAssignment) s).getValue()));
         } else if (s instanceof FuncStatement) {
-            return searchMatch(fragment, ((FuncStatement) s).getFunc());
+            return searchMatch(fragment, ((FuncStatement) s).func);
         } else if (s instanceof ForLoop) {
             int max = 0;
             ForLoop f = (ForLoop) s;
             if (!f.isAngelic())
                 max = Math.max(max, searchMatch(fragment, f.getCondition()));
-            for (Statement b : f.getBody())
+            for (Statement b : f.body)
                 max = Math.max(max, searchMatch(fragment, b));
             return max;
         } else if (s instanceof ForEachLoop) {
             ForEachLoop f = (ForEachLoop) s;
-            int max = searchMatch(fragment, f.getContainer());
-            for (Statement b : f.getBody())
+            int max = searchMatch(fragment, f.container);
+            for (Statement b : f.body)
                 max = Math.max(max, searchMatch(fragment, b));
             return max;
         } else if (s instanceof IfStatement) {
@@ -511,7 +512,7 @@ public class ProgramUtils {
             IfStatement i = (IfStatement) s;
             if (!i.isAngelic())
                 max = Math.max(max, searchMatch(fragment, i.getCondition()));
-            for (Statement b : i.getBody())
+            for (Statement b : i.body)
                 max = Math.max(max, searchMatch(fragment, b));
             return max;
         } else {
@@ -526,9 +527,9 @@ public class ProgramUtils {
             // nothing else
         } else if (e instanceof FuncExpression) {
             FuncExpression f = (FuncExpression) e;
-            if (!f.getData().isStatic())
-                max = Math.max(max, searchMatch(fragment, f.getCalledFrom()));
-            for (Expression e2 : f.getArgs())
+            if (!f.data.isStatic)
+                max = Math.max(max, searchMatch(fragment, f.callee()));
+            for (Expression e2 : f.args)
                 max = Math.max(max, searchMatch(fragment, e2));
         } else if (e instanceof OpExpression) {
             OpExpression o = (OpExpression) e;
@@ -548,32 +549,32 @@ public class ProgramUtils {
         if (s instanceof VarAssignment) {
             VarAssignment vp = (VarAssignment) fragment;
             VarAssignment vs = (VarAssignment) s;
-            return 1 + countMatch(vp.getVar(), vs.getVar()) + countMatch(vp.getValue(), vs.getValue());
+            return 1 + countMatch(vp.var, vs.var) + countMatch(vp.getValue(), vs.getValue());
         } else if (s instanceof FuncStatement) {
-            return countMatch(((FuncStatement) fragment).getFunc(), ((FuncStatement) s).getFunc());
+            return countMatch(((FuncStatement) fragment).func, ((FuncStatement) s).func);
         } else if (s instanceof ForLoop) {
             sum++;
             ForLoop fp = (ForLoop) fragment;
             ForLoop fs = (ForLoop) s;
             if (!fp.isAngelic() && !fs.isAngelic())
                 sum += countMatch(fp.getCondition(), fs.getCondition());
-            for (int i = 0; i < fp.getBody().size() && i < fs.getBody().size(); i++)
-                sum += countMatch(fp.getBody().get(i), fs.getBody().get(i));
+            for (int i = 0; i < fp.body.size() && i < fs.body.size(); i++)
+                sum += countMatch(fp.body.get(i), fs.body.get(i));
         } else if (s instanceof ForEachLoop) {
             sum++;
             ForEachLoop fp = (ForEachLoop) fragment;
             ForEachLoop fs = (ForEachLoop) s;
-            sum += countMatch(fp.getContainer(), fs.getContainer());
-            for (int i = 0; i < fp.getBody().size() && i < fs.getBody().size(); i++)
-                sum += countMatch(fp.getBody().get(i), fs.getBody().get(i));
+            sum += countMatch(fp.container, fs.container);
+            for (int i = 0; i < fp.body.size() && i < fs.body.size(); i++)
+                sum += countMatch(fp.body.get(i), fs.body.get(i));
         } else if (s instanceof IfStatement) {
             sum++;
             IfStatement ip = (IfStatement) fragment;
             IfStatement is = (IfStatement) s;
             if (!ip.isAngelic() && !is.isAngelic())
                 sum += countMatch(ip.getCondition(), is.getCondition());
-            for (int i = 0; i < ip.getBody().size() && i < is.getBody().size(); i++)
-                sum += countMatch(ip.getBody().get(i), is.getBody().get(i));
+            for (int i = 0; i < ip.body.size() && i < is.body.size(); i++)
+                sum += countMatch(ip.body.get(i), is.body.get(i));
         } else {
             System.err.println("Unknown statement class in countMatch(Statement, Statement)");
             return 0;
@@ -590,17 +591,17 @@ public class ProgramUtils {
         } else if (e instanceof FuncExpression) {
             FuncExpression fp = (FuncExpression) fragment;
             FuncExpression fe = (FuncExpression) e;
-            if (!fp.getData().equals(fe.getData()))
+            if (!fp.data.equals(fe.data))
                 return 0;
             sum++;
-            if (!fe.getData().isStatic())
-                sum += countMatch(fp.getCalledFrom(), fe.getCalledFrom());
-            for (int i = 0; i < fe.getArgs().length; i++)
-                sum += countMatch(fp.getArgs()[i], fe.getArgs()[i]);
+            if (!fe.data.isStatic)
+                sum += countMatch(fp.callee(), fe.callee());
+            for (int i = 0; i < fe.args.length; i++)
+                sum += countMatch(fp.args[i], fe.args[i]);
         } else if (e instanceof OpExpression) {
             OpExpression op = (OpExpression) fragment;
             OpExpression oe = (OpExpression) e;
-            if (op.getOp() != oe.getOp())
+            if (op.op() != oe.op())
                 return 0;
             sum++;
             if (oe.getLeft() != null)
@@ -626,12 +627,12 @@ public class ProgramUtils {
     private static int numAngelic(Statement s) {
         if (s instanceof ForLoop) {
             ForLoop f = (ForLoop) s;
-            return numAngelic(f.getBody()) + (f.isAngelic() ? 1 : 0);
+            return numAngelic(f.body) + (f.isAngelic() ? 1 : 0);
         } else if (s instanceof IfStatement) {
             IfStatement i = (IfStatement) s;
-            return numAngelic(i.getBody()) + (i.isAngelic() ? 1 : 0);
+            return numAngelic(i.body) + (i.isAngelic() ? 1 : 0);
         } else if (s instanceof ForEachLoop) {
-            return numAngelic(((ForEachLoop) s).getBody());
+            return numAngelic(((ForEachLoop) s).body);
         }
         return 0;
     }
@@ -648,10 +649,10 @@ public class ProgramUtils {
     private static void resetIndents(Statement s, int indent) {
         s.setIndent(indent);
         if (s instanceof ForLoop)
-            resetIndents(((ForLoop) s).getBody(), indent + 1);
+            resetIndents(((ForLoop) s).body, indent + 1);
         else if (s instanceof IfStatement)
-            resetIndents(((IfStatement) s).getBody(), indent + 1);
+            resetIndents(((IfStatement) s).body, indent + 1);
         else if (s instanceof ForEachLoop)
-            resetIndents(((ForEachLoop) s).getBody(), indent + 1);
+            resetIndents(((ForEachLoop) s).body, indent + 1);
     }
 }

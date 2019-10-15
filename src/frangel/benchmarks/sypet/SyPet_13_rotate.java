@@ -1,6 +1,7 @@
 package frangel.benchmarks.sypet;
 
 import java.awt.geom.*;
+import java.util.function.BiPredicate;
 
 import frangel.Example;
 import frangel.SynthesisTask;
@@ -22,7 +23,7 @@ public enum SyPet_13_rotate implements TaskCreator {
                 .setInputNames("area", "point", "angle")
                 .setOutputType(Area.class)
                 .addPackages("java.awt.geom")
-                .addEqualityTester(Area.class, (Area a1, Area a2) -> a1.equals(a2))
+                .addEqualityTester(Area.class, (BiPredicate<Area, Area>) Area::equals)
                 .addTags(Tag.SINGLE_LINE); // Easily written in one line
 
         task.addExample(new Example()

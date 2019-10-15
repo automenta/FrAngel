@@ -67,8 +67,9 @@ public class Interpreter {
     private static EvaluationInfo evaluate(Program program, Object[] arguments, String angelicCodePath, long start) {
         EvaluationInfo info = new EvaluationInfo(angelicCodePath);
         Environment env = new Environment();
-        for (int i = 0; i < program.getArgNames().length; i++)
-            env.set(program.getArgNames()[i], arguments[i]);
+        int aLen = program.argNames.length;
+        for (int i = 0; i < aLen; i++)
+            env.set(program.argNames[i], arguments[i]);
 
         boolean error = false;
         try {
@@ -119,11 +120,11 @@ public class Interpreter {
 
     private static void evaluateVarAssignment(VarAssignment s, Environment env) throws Exception {
         Object value = evaluateExpression(s.getValue(), env);
-        env.set(s.getVar().getName(), value);
+        env.set(s.var.getName(), value);
     }
 
     private static void evaluateFuncStatement(FuncStatement s, Environment env) throws Exception {
-        evaluateFuncExp(s.getFunc(), env);
+        evaluateFuncExp(s.func, env);
     }
 
     private static void evaluateIfStatement(IfStatement s, Environment env, EvaluationInfo info, long start) throws Exception {
@@ -137,7 +138,7 @@ public class Interpreter {
             condition = (boolean) evaluateExpression(s.getCondition(), env);
         }
         if (condition)
-            evaluateBlock(s.getBody(), env, info, start);
+            evaluateBlock(s.body, env, info, start);
     }
 
     private static void evaluateForLoop(ForLoop s, Environment env, EvaluationInfo info, long start) throws Exception {
@@ -161,17 +162,17 @@ public class Interpreter {
 
             if (!condition)
                 break;
-            evaluateBlock(s.getBody(), env, info, start);
+            evaluateBlock(s.body, env, info, start);
             env.incLoopCounter(s.getVarName());
         }
     }
 
     private static void evaluateForEachLoop(ForEachLoop s, Environment env, EvaluationInfo info, long start) throws Exception {
-        Object containerObj = evaluateExpression(s.getContainer(), env);
+        Object containerObj = evaluateExpression(s.container, env);
         String elemName = s.getVarName();
         if (env.contains(elemName))
             throw new IncompleteRunException("For-each loop element variable already in scope");
-        boolean isArray = s.getContainer().getType().isArray();
+        boolean isArray = s.container.getType().isArray();
         int i = 0;
         int len = isArray ? Array.getLength(containerObj) : 0;
         Iterator<?> it = isArray ? null : ((Iterable<?>) containerObj).iterator();
@@ -193,7 +194,7 @@ public class Interpreter {
                 else
                     break;
             }
-            evaluateBlock(s.getBody(), env, info, start);
+            evaluateBlock(s.body, env, info, start);
         }
         env.remove(elemName);
     }
@@ -212,7 +213,7 @@ public class Interpreter {
     }
 
     private static Object evaluateLiteral(LiteralExpression exp) {
-        return exp.getLiteral();
+        return exp.literal;
     }
 
     private static Object evaluateVariable(VarExpression exp, Environment env) throws Exception {
@@ -220,7 +221,7 @@ public class Interpreter {
     }
 
     private static Object evaluateOperator(OpExpression exp, Environment env) throws Exception {
-        Op op = exp.getOp();
+        Op op = exp.op();
         Object left = null, right = null;
         Class<?> leftType = null, rightType = null;
         if (exp.getLeft() != null) {
@@ -266,7 +267,7 @@ public class Interpreter {
             } else if (leftType.equals(String.class) || rightType.equals(String.class) || leftType.equals(Object.class) || rightType.equals(Object.class)) {
                 if (left == null && right == null && exp.getLeft() instanceof LiteralExpression && exp.getRight() instanceof LiteralExpression)
                     throw new IncompleteRunException("Cannot add two null literals");
-                return "" + left + right;
+                return String.valueOf(left) + right;
             } else {
                 throw new EvaluationException("evaluateOperator, case PLUS, left type " + leftType);
             }
@@ -302,25 +303,25 @@ public class Interpreter {
     }
 
     private static Object evaluateFuncExp(FuncExpression exp, Environment env) throws Exception {
-        FunctionData data = exp.getData();
+        FunctionData data = exp.data;
 
-        Object[] args = new Object[exp.getArgs().length];
+        Object[] args = new Object[exp.args.length];
         for (int i = 0; i < args.length; i++)
-            args[i] = evaluateExpression(exp.getArgs()[i], env);
+            args[i] = evaluateExpression(exp.args[i], env);
 
         Object callerObj = null;
-        if (!data.isStatic()) {
-            callerObj = evaluateExpression(exp.getCalledFrom(), env);
+        if (!data.isStatic) {
+            callerObj = evaluateExpression(exp.callee(), env);
             if (callerObj == null)
                 throw new NullPointerException();
         }
 
         Object returnVal;
-        switch (data.getKind()) {
+        switch (data.kind) {
         case METHOD:
             returnVal = data.getMethod().invoke(callerObj, args);
-            if (data.returnsGeneric() && returnVal != null && !data.getReturnType().isAssignableFrom(returnVal.getClass()))
-                throw new IncompleteRunException(data.getName() + " returned " + returnVal.getClass() + ", expected " + data.getReturnType());
+            if (data.returnsGeneric() && returnVal != null && !data.returnType.isAssignableFrom(returnVal.getClass()))
+                throw new IncompleteRunException(data.name + " returned " + returnVal.getClass() + ", expected " + data.returnType);
             checkMemory(returnVal);
             checkMemory(callerObj);
             return returnVal;
@@ -330,8 +331,8 @@ public class Interpreter {
             return returnVal;
         case FIELD:
             returnVal = data.getField().get(callerObj);
-            if (data.returnsGeneric() && returnVal != null && !data.getReturnType().isAssignableFrom(returnVal.getClass()))
-                throw new IncompleteRunException(data.getName() + " returned " + returnVal.getClass() + ", expected " + data.getReturnType());
+            if (data.returnsGeneric() && returnVal != null && !data.returnType.isAssignableFrom(returnVal.getClass()))
+                throw new IncompleteRunException(data.name + " returned " + returnVal.getClass() + ", expected " + data.returnType);
             return returnVal;
         case ARR_GET:
             return Array.get(args[0], (int) args[1]);
@@ -341,7 +342,7 @@ public class Interpreter {
         case ARR_LEN:
             return Array.getLength(args[0]);
         default:
-            throw new EvaluationException("evaluateFuncExp, unknown FunctionData.Kind: " + data.getKind());
+            throw new EvaluationException("evaluateFuncExp, unknown FunctionData.Kind: " + data.kind);
         }
     }
 

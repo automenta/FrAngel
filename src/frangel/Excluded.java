@@ -54,7 +54,7 @@ public class Excluded {
     private static class ClassOrPackage {
         Class<?> cls;
         String pkg; // without wildcard symbol
-        boolean isClass;
+        final boolean isClass;
         ClassOrPackage(Class<?> cls) {
             this.cls = cls;
             isClass = true;
@@ -122,8 +122,9 @@ public class Excluded {
             if (!matchedType)
                 return false;
             if (parameters != null) {
-                for (int i : parameters.keySet()) {
-                    Class<?> expected = parameters.get(i);
+                for (Map.Entry<Integer, Class<?>> entry : parameters.entrySet()) {
+					int i = entry.getKey();
+					Class<?> expected = entry.getValue();
                     if (c.getParameterCount() <= i || !c.getParameterTypes()[i].equals(expected))
                         return false;
                 }
@@ -140,7 +141,7 @@ public class Excluded {
                 return false;
             boolean matchedName = false;
             for (String name : names) {
-                boolean thisMatch = false;
+                boolean thisMatch;
                 if (name.endsWith("*"))
                     thisMatch = m.getName().startsWith(name.substring(0, name.length() - 1));
                 else if (name.startsWith("*"))
@@ -155,8 +156,9 @@ public class Excluded {
             if (!matchedName)
                 return false;
             if (parameters != null) {
-                for (int i : parameters.keySet()) {
-                    Class<?> expected = parameters.get(i);
+                for (Map.Entry<Integer, Class<?>> entry : parameters.entrySet()) {
+					int i = entry.getKey();
+					Class<?> expected = entry.getValue();
                     if (m.getParameterCount() <= i || !m.getParameterTypes()[i].equals(expected))
                         return false;
                 }
@@ -165,8 +167,8 @@ public class Excluded {
         }
     }
 
-    private List<ExcludedClasses> classes = new ArrayList<>();
-    private List<ExcludedConstructors> constructors = new ArrayList<>();
-    private List<ExcludedMethods> methods = new ArrayList<>();
+    private final List<ExcludedClasses> classes = new ArrayList<>();
+    private final List<ExcludedConstructors> constructors = new ArrayList<>();
+    private final List<ExcludedMethods> methods = new ArrayList<>();
 }
 

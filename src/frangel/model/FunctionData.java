@@ -8,22 +8,22 @@ import java.util.Map;
 import frangel.utils.Utils;
 
 public class FunctionData implements Comparable<FunctionData> {
-    public enum Kind {METHOD, CONSTRUCTOR, FIELD, ARR_GET, ARR_SET, ARR_LEN};
+    public enum Kind {METHOD, CONSTRUCTOR, FIELD, ARR_GET, ARR_SET, ARR_LEN}
 
-    private String name;
+    public final String name;
     private String simpleName;
-    private Class<?> callerClass;
-    private Class<?> returnType; // void if doesn't return
-    private Class<?>[] argTypes;
-    private boolean isStatic;
-    private boolean returns;
-    private Kind kind;
+    public final Class<?> calleeClass;
+    public final Class<?> returnType; // void if doesn't return
+    public final Class<?>[] argTypes;
+    public final boolean isStatic;
+    public final boolean returns;
+    public final Kind kind;
 
     private Method method = null;
     private Constructor<?> constructor = null;
     private Field field = null;
 
-    private static Map<String, Integer> encodingMap = new HashMap<String, Integer>();
+    private static Map<String, Integer> encodingMap = new HashMap<>();
     private String encoding;
 
     private boolean valid = true;
@@ -50,13 +50,13 @@ public class FunctionData implements Comparable<FunctionData> {
 
     public FunctionData(Method m, Class<?> parameterType) {
         method = m;
-        callerClass = m.getDeclaringClass();
+        calleeClass = m.getDeclaringClass();
         name = m.getName();
         simpleName = name;
         Type generic = m.getGenericReturnType();
         returnType = convertGenericType(generic, m.getReturnType(), parameterType);
         if (name.equals("equals") && m.getParameterCount() == 1)
-            argTypes = new Class<?>[] {this.callerClass};
+            argTypes = new Class<?>[] {this.calleeClass};
             else
                 argTypes = convertGenericTypes(m.getGenericParameterTypes(), m.getParameterTypes(), parameterType);
         isStatic = Modifier.isStatic(m.getModifiers());
@@ -69,10 +69,10 @@ public class FunctionData implements Comparable<FunctionData> {
 
     public FunctionData(Constructor<?> con, Class<?> parameterType) {
         constructor = con;
-        callerClass = con.getDeclaringClass();
-        name = Utils.getParameterizedName(callerClass, parameterType);
-        simpleName = Utils.getParameterizedName(callerClass, parameterType, true);
-        returnType = callerClass;
+        calleeClass = con.getDeclaringClass();
+        name = Utils.getParameterizedName(calleeClass, parameterType);
+        simpleName = Utils.getParameterizedName(calleeClass, parameterType, true);
+        returnType = calleeClass;
         argTypes = convertGenericTypes(con.getGenericParameterTypes(), con.getParameterTypes(), parameterType);
         isStatic = true; // don't need an existing object to call constructor
         returns = true;
@@ -82,7 +82,7 @@ public class FunctionData implements Comparable<FunctionData> {
 
     public FunctionData(Field f, Class<?> parameterType) {
         field = f;
-        callerClass = f.getDeclaringClass();
+        calleeClass = f.getDeclaringClass();
         name = f.getName();
         simpleName = name;
         Type generic = f.getGenericType();
@@ -101,18 +101,18 @@ public class FunctionData implements Comparable<FunctionData> {
         this.returnType = returnType;
         this.argTypes = argTypes;
         this.kind = kind;
-        callerClass = null;
+        calleeClass = null;
         isStatic = true;
         returns = !returnType.equals(void.class);
         setEncoding();
     }
 
     public static void resetEncodingMap() {
-        encodingMap = new HashMap<String, Integer>();
+        encodingMap = new HashMap<>();
     }
 
     private void setEncoding() {
-        String encodingKey = kind + (callerClass == null ? "~" : callerClass.getCanonicalName()) + "-" + name + "-" + argTypes.length + "-" + isStatic;
+        String encodingKey = kind + (calleeClass == null ? "~" : calleeClass.getCanonicalName()) + "-" + name + "-" + argTypes.length + "-" + isStatic;
         if (!encodingMap.containsKey(encodingKey))
             encodingMap.put(encodingKey, encodingMap.size());
         int i = encodingMap.get(encodingKey);
@@ -166,36 +166,8 @@ public class FunctionData implements Comparable<FunctionData> {
         return result;
     }
 
-    public String getName() {
-        return name;
-    }
-
-    public String getName(boolean simpleName) {
+    public String name(boolean simpleName) {
         return simpleName ? this.simpleName : name;
-    }
-
-    public Class<?> getCallerClass() {
-        return callerClass;
-    }
-
-    public Class<?> getReturnType() {
-        return returnType;
-    }
-
-    public Class<?>[] getArgTypes() {
-        return argTypes;
-    }
-
-    public boolean isStatic() {
-        return isStatic;
-    }
-
-    public boolean returns() {
-        return returns;
-    }
-
-    public Kind getKind() {
-        return kind;
     }
 
     public Method getMethod() {
@@ -222,7 +194,7 @@ public class FunctionData implements Comparable<FunctionData> {
     private String getComparisonKey() {
         if (comparisonKey != null)
             return comparisonKey;
-        comparisonKey = (callerClass == null ? "null" : callerClass.getName()) + " " + name + " " + argTypes.length;
+        comparisonKey = (calleeClass == null ? "null" : calleeClass.getName()) + " " + name + " " + argTypes.length;
         for (Class<?> argType : argTypes)
             comparisonKey += " " + argType.getName();
         return comparisonKey;
@@ -230,6 +202,6 @@ public class FunctionData implements Comparable<FunctionData> {
 
     @Override
     public int compareTo(FunctionData o) {
-        return getComparisonKey().compareTo(o.getComparisonKey());
+        return this==o ? 0 : getComparisonKey().compareTo(o.getComparisonKey());
     }
 }

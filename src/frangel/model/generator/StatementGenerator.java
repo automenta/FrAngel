@@ -17,11 +17,11 @@ import frangel.utils.ProgramUtils;
 import frangel.utils.Utils;
 
 public class StatementGenerator {
-    public enum StatementCategory { ASSIGN, FUNC, FOR, FOREACH, IF };
+    public enum StatementCategory { ASSIGN, FUNC, FOR, FOREACH, IF }
 
     // The Program that owns this ExpressionGenerator. In particular, this Program stores the
     // available variables' names and types.
-    private Program program;
+    private final Program program;
 
     public StatementGenerator(Program program) {
         this.program = program;
@@ -40,29 +40,29 @@ public class StatementGenerator {
     }
 
     private Statement genSimilarStatement(Statement s, int indent) {
-        ExpressionGenerator expGen = program.getExpressionGenerator();
+        ExpressionGenerator expGen = program.expressionGenerator;
         boolean isAngelic = program.isAngelic();
         if (s instanceof VarAssignment) {
             VarAssignment v = (VarAssignment) s;
             VarExpression var;
             if (Utils.randBoolean(Settings.GEN_SIMILAR_PROB_NEW))
-                var = expGen.genVarExp(1, v.getVar().getType());
+                var = expGen.genVarExp(1, v.var.getType());
             else
-                var = (VarExpression) expGen.genSimilarExpression(v.getVar());
+                var = (VarExpression) expGen.genSimilarExpression(v.var);
             Expression value = expGen.newOrSimilar(v.getValue());
             if (var == null || value == null)
                 return null;
             return new VarAssignment(var, value, indent);
         } else if (s instanceof FuncStatement) {
             FuncStatement f = (FuncStatement) s;
-            FuncExpression fExp = (FuncExpression) expGen.genSimilarExpression(f.getFunc());
+            FuncExpression fExp = (FuncExpression) expGen.genSimilarExpression(f.func);
             if (fExp == null)
                 return null;
             return new FuncStatement(fExp, indent);
         } else if (s instanceof IfStatement) {
             IfStatement i = (IfStatement) s;
-            List<Statement> body = new ArrayList<Statement>();
-            for (Statement inner : i.getBody()) {
+            List<Statement> body = new ArrayList<>();
+            for (Statement inner : i.body) {
                 Statement newInner = newOrSimilar(inner, indent + 1);
                 if (newInner != null)
                     body.add(newInner);
@@ -79,10 +79,10 @@ public class StatementGenerator {
             }
         } else if (s instanceof ForLoop) {
             ForLoop f = (ForLoop) s;
-            List<Statement> body = new ArrayList<Statement>();
+            List<Statement> body = new ArrayList<>();
             String varName = f.getVarName();
             program.addToScope(varName);
-            for (Statement inner : f.getBody()) {
+            for (Statement inner : f.body) {
                 Statement newInner = newOrSimilar(inner, indent + 1);
                 if (newInner != null)
                     body.add(newInner);
@@ -103,13 +103,13 @@ public class StatementGenerator {
             List<Statement> body = new ArrayList<>();
             String varName = f.getVarName();
             program.addToScope(varName);
-            for (Statement inner : f.getBody()) {
+            for (Statement inner : f.body) {
                 Statement newInner = newOrSimilar(inner, indent + 1);
                 if (newInner != null)
                     body.add(newInner);
             }
             program.removeFromScope(varName);
-            return new ForEachLoop(f.getVarType(), varName, f.getContainer().clone(), body, indent);
+            return new ForEachLoop(f.varType, varName, f.container.clone(), body, indent);
         } else {
             System.err.println("Unknown statement class in genSimilarStatement");
             return null;
@@ -118,7 +118,7 @@ public class StatementGenerator {
 
     // A block could have zero statements if generating statements always fails
     List<Statement> genBlock(int size, int indent) {
-        List<Statement> block = new ArrayList<Statement>();
+        List<Statement> block = new ArrayList<>();
         int maxStatements = Math.min(size / Settings.MIN_STATEMENT_SIZE, Settings.MAX_BLOCK_SIZE);
         if (maxStatements == 0)
             return block;
@@ -148,7 +148,7 @@ public class StatementGenerator {
         List<Statement> list = program.getStatementFragments();
         if (!disableFragments && program.useFragments() && list != null && !list.isEmpty() && Utils.randBoolean()) {
             Statement randElement = Utils.randElement(list).clone();
-            ProgramUtils.makeVarsCompatible(randElement, new HashMap<String, String>(), program);
+            ProgramUtils.makeVarsCompatible(randElement, new HashMap<>(), program);
             if (Utils.randBoolean())
                 return randElement;
             Statement similar = genSimilarStatement(randElement, indent);
@@ -178,13 +178,13 @@ public class StatementGenerator {
     }
 
     VarAssignment genVarAssignment(int size, int indent, boolean disableFragments) {
-        List<String> mutable = new ArrayList<String>(program.getLocalVars().keySet());
-        mutable.addAll(program.getArgVars());
+        List<String> mutable = new ArrayList<>(program.getLocalVars().keySet());
+        mutable.addAll(program.argVars);
         if (mutable.isEmpty())
             return null;
         String name = Utils.randElement(mutable);
         Class<?> type = program.getVariables().get(name);
-        Expression value = program.getExpressionGenerator().genAnyExp(size - 2, type, disableFragments);
+        Expression value = program.expressionGenerator.genAnyExp(size - 2, type, disableFragments);
         if (value == null)
             return null;
         if (value instanceof VarExpression && ((VarExpression)value).getName().equals(name))
@@ -193,7 +193,7 @@ public class StatementGenerator {
     }
 
     FuncStatement genFuncStatement(int size, int indent, boolean disableFragments) {
-        FuncExpression func = program.getExpressionGenerator().genFuncExp(size - 1, void.class, disableFragments);
+        FuncExpression func = program.expressionGenerator.genFuncExp(size - 1, void.class, disableFragments);
         if (func == null)
             return null;
         return new FuncStatement(func, indent);
@@ -215,7 +215,7 @@ public class StatementGenerator {
             int maxCondSize = Math.min(Settings.MAX_LOOP_COND_SIZE, size - 1 - Settings.MIN_STATEMENT_SIZE);
             conditionSize = Utils.randInt(Settings.MIN_LOOP_COND_SIZE, maxCondSize + 1);
             ExpCategory[] noLiteral = new ExpCategory[] {ExpCategory.FUNC, ExpCategory.OP, ExpCategory.VAR};
-            condition = program.getExpressionGenerator().genExp(conditionSize, boolean.class, noLiteral, true);
+            condition = program.expressionGenerator.genExp(conditionSize, boolean.class, noLiteral, true);
             if (condition == null) {
                 program.removeFromScope(varName);
                 return null;
@@ -232,11 +232,12 @@ public class StatementGenerator {
     }
 
     private static class Container {
-        enum ContainerKind {ARRAY, STRING, LIST, SET, MAP, QUEUE, ITERABLE};
-        String containerName;
-        ContainerKind kind;
-        Class<?> containerType;
-        Class<?> elemType;
+        enum ContainerKind {ARRAY, STRING, LIST, SET, MAP, QUEUE, ITERABLE}
+
+        final String containerName;
+        final ContainerKind kind;
+        final Class<?> containerType;
+        final Class<?> elemType;
         Container(String containerName, ContainerKind kind, Class<?> containerType, Class<?> elemType) {
             this.containerName = containerName;
             this.kind = kind;
@@ -291,7 +292,7 @@ public class StatementGenerator {
                 else if (Iterable.class.isAssignableFrom(containerType))
                     kind = Container.ContainerKind.ITERABLE;
                 if (kind != null) {
-                    Class<?> elemType = Utils.getParameterTypeForClass(containerType, program.getParameterTypeMap());
+                    Class<?> elemType = Utils.getParameterTypeForClass(containerType, program.parameterTypeMap);
                     if (elemType != null)
                         containers.add(new Container(containerName, kind, containerType, elemType));
                 }
@@ -326,7 +327,7 @@ public class StatementGenerator {
             int maxCondSize = Math.min(Settings.MAX_IF_COND_SIZE, size - 1 - Settings.MIN_STATEMENT_SIZE);
             conditionSize = Utils.randInt(Settings.MIN_IF_COND_SIZE, maxCondSize + 1);
             ExpCategory[] noLiteral = new ExpCategory[] {ExpCategory.FUNC, ExpCategory.OP, ExpCategory.VAR};
-            condition = program.getExpressionGenerator().genExp(conditionSize, boolean.class, noLiteral, true);
+            condition = program.expressionGenerator.genExp(conditionSize, boolean.class, noLiteral, true);
             if (condition == null)
                 return null;
         }

@@ -16,7 +16,7 @@ public class Main {
         SynthesisTask b = frangel.benchmarks.controlstructures.GetRange.INSTANCE.createTask();
         b.finalizeSetup();
         JavaFunctionLoader.resetData(b);
-        Set<String> programs = new HashSet<String>(1000*1000);
+        Set<String> programs = new HashSet<>(1000 * 1000);
         int[] counts = new int[maxSize + 1];
         frangel.model.generator.ProgramGenerator generator = new frangel.model.generator.ProgramGenerator(b);
         long gen = 0;
@@ -59,24 +59,33 @@ public class Main {
                 String label = s.substring(0, firstEquals).toLowerCase();
                 String value = s.substring(firstEquals + 1);
 
-                if (label.equals("-fragments")) {
-                    Settings.MINE_FRAGMENTS = Boolean.parseBoolean(value);
-                } else if (label.equals("-angelic")) {
-                    Settings.USE_ANGELIC_CONDITIONS = Boolean.parseBoolean(value);
-                } else if (label.equals("-time")) {
-                    Settings.TIME_LIMIT = Integer.parseInt(value);
-                } else if (label.equals("-group")) {
-                    Settings.BENCHMARK_GROUP = BenchmarkGroup.valueOf(value);
-                } else if (label.equals("-run")) {
-                    Settings.RUN = Integer.parseInt(value);
-                } else if (label.equals("-results-folder")) {
-                    Settings.RESULTS_FOLDER = value;
-                } else if (label.equals("-all-in-group")) {
-                    Settings.RUN_ALL_IN_GROUP = Boolean.parseBoolean(value);
-                } else if (label.equals("-all-groups")) {
-                    Settings.RUN_ALL_GROUPS = Boolean.parseBoolean(value);
-                } else {
-                    throw new Exception();
+                switch (label) {
+                    case "-fragments":
+                        Settings.MINE_FRAGMENTS = Boolean.parseBoolean(value);
+                        break;
+                    case "-angelic":
+                        Settings.USE_ANGELIC_CONDITIONS = Boolean.parseBoolean(value);
+                        break;
+                    case "-time":
+                        Settings.TIME_LIMIT = Integer.parseInt(value);
+                        break;
+                    case "-group":
+                        Settings.BENCHMARK_GROUP = BenchmarkGroup.valueOf(value);
+                        break;
+                    case "-run":
+                        Settings.RUN = Integer.parseInt(value);
+                        break;
+                    case "-results-folder":
+                        Settings.RESULTS_FOLDER = value;
+                        break;
+                    case "-all-in-group":
+                        Settings.RUN_ALL_IN_GROUP = Boolean.parseBoolean(value);
+                        break;
+                    case "-all-groups":
+                        Settings.RUN_ALL_GROUPS = Boolean.parseBoolean(value);
+                        break;
+                    default:
+                        throw new Exception();
                 }
             } catch (Exception e) {
                 System.err.println("Bad argument: " + s);
@@ -158,7 +167,7 @@ public class Main {
 
         System.out.println("Running " + tasks.size() + " task(s).\n");
 
-        List<FrAngelResult> results = new ArrayList<FrAngelResult>();
+        List<FrAngelResult> results = new ArrayList<>();
 
         int success = 0, total = 0;
         for (SynthesisTask task : tasks) {

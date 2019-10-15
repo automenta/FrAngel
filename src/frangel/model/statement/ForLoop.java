@@ -9,7 +9,7 @@ import frangel.utils.Utils;
 public class ForLoop extends Statement {
     private String varName;
     private Expression condition;
-    private List<Statement> body;
+    public final List<Statement> body;
     private Expression rememberedCondition;
     private boolean isVarLocal;
     private boolean isWhileLoop;
@@ -129,10 +129,6 @@ public class ForLoop extends Statement {
 
     public void rememberCondition(Expression condition) {
         this.rememberedCondition = condition.clone();
-    }
-
-    public List<Statement> getBody() {
-        return body;
     }
 
     public boolean isAngelic() {

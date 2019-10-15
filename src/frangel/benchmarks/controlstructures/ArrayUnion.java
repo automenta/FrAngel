@@ -1,5 +1,6 @@
 package frangel.benchmarks.controlstructures;
 
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -61,10 +62,8 @@ public enum ArrayUnion implements TaskCreator {
 
     static Set<String> solution(String[] arr1, String[] arr2) {
         Set<String> ans = new HashSet<>();
-        for (String s : arr1)
-            ans.add(s);
-        for (String s : arr2)
-            ans.add(s);
+        ans.addAll(Arrays.asList(arr1));
+        ans.addAll(Arrays.asList(arr2));
         return ans;
     }
 }

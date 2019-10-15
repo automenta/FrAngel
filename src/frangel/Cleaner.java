@@ -15,9 +15,9 @@ import frangel.utils.Utils;
 
 public class Cleaner {
 
-    private Program program;
-    private SynthesisTask task;
-    private BitSet indices;
+    private final Program program;
+    private final SynthesisTask task;
+    private final BitSet indices;
 
     public Cleaner(Program p, SynthesisTask task, BitSet indices) {
         this.program = p;
@@ -27,7 +27,7 @@ public class Cleaner {
 
     private void resetProgramVars() {
         Set<String> usedVars = ProgramUtils.getUsedVars(program);
-        usedVars.addAll(program.getArgVars()); // Don't delete info about arguments, even if they weren't used
+        usedVars.addAll(program.argVars); // Don't delete info about arguments, even if they weren't used
         program.getVariables().keySet().retainAll(usedVars);
         program.getLocalVars().keySet().retainAll(usedVars);
         program.getLoopVars().retainAll(usedVars);
@@ -45,8 +45,8 @@ public class Cleaner {
     }
 
     private static class ExpressionWithSize implements Comparable<ExpressionWithSize> {
-        Expression e;
-        int size;
+        final Expression e;
+        final int size;
         ExpressionWithSize(Expression e) {
             this.e = e;
             size = ProgramUtils.size(e);
@@ -69,16 +69,16 @@ public class Cleaner {
     }
 
     private List<Expression> getReplacements(Expression exp, Set<Class<?>> types) {
-        List<Expression> replacements = new ArrayList<Expression>();
+        List<Expression> replacements = new ArrayList<>();
         if (exp instanceof LiteralExpression) {
             LiteralExpression l = (LiteralExpression) exp;
-            if (l.getType() == int.class && (Integer) l.getLiteral() != 0)
+            if (l.getType() == int.class && (Integer) l.literal != 0)
                 replacements.add(new LiteralExpression(0, int.class));
-            if (l.getType() == long.class && (Long) l.getLiteral() != 0)
+            if (l.getType() == long.class && (Long) l.literal != 0)
                 replacements.add(new LiteralExpression(0L, long.class));
-            if (l.getType() == double.class && (Double) l.getLiteral() != 0.0)
+            if (l.getType() == double.class && (Double) l.literal != 0.0)
                 replacements.add(new LiteralExpression(0.0, double.class));
-            if (l.getType().equals(String.class) && !"".equals(l.getLiteral()))
+            if (l.getType().equals(String.class) && !"".equals(l.literal))
                 replacements.add(new LiteralExpression("", String.class));
             return replacements;
         }
@@ -96,9 +96,9 @@ public class Cleaner {
         }
 
         if (exp instanceof VarExpression) {
-            if (!program.getArgVars().contains(((VarExpression) exp).getName())) {
+            if (!program.argVars.contains(((VarExpression) exp).getName())) {
                 Class<?> expType = exp.getType();
-                for (String argName : program.getArgNames()) {
+                for (String argName : program.argNames) {
                     Class<?> argType = program.getVariables().get(argName);
                     if (expType.isAssignableFrom(argType))
                         replacements.add(new VarExpression(argName, argType));
@@ -133,52 +133,52 @@ public class Cleaner {
 
         if (exp instanceof FuncExpression) {
             FuncExpression f = (FuncExpression) exp;
-            if (!f.getData().isStatic()) {
-                original = f.getCalledFrom();
-                if (f.getData().getKind() == Kind.METHOD)
-                    replacements = getReplacements(original, JavaFunctionLoader.getPossibleCallingTypes(f.getData().getMethod()));
+            if (!f.data.isStatic) {
+                original = f.callee();
+                if (f.data.kind == Kind.METHOD)
+                    replacements = getReplacements(original, JavaFunctionLoader.getPossibleCallingTypes(f.data.getMethod()));
                 else
                     replacements = getReplacements(original);
                 replaced = false;
                 for (Expression replacement : replacements) {
-                    f.setCalledFrom(replacement);
+                    f.callee(replacement);
                     if (checkClean()) {
                         replaced = true;
                         break;
                     }
                 }
                 if (!replaced)
-                    f.setCalledFrom(original);
-                quickCleanExpression(f.getCalledFrom());
+                    f.callee(original);
+                quickCleanExpression(f.callee());
             }
 
-            for (int i = 0; i < f.getArgs().length; i++) {
-                original = f.getArgs()[i];
-                replacements = getReplacements(original, f.getData().getArgTypes()[i]);
+            for (int i = 0; i < f.args.length; i++) {
+                original = f.args[i];
+                replacements = getReplacements(original, f.data.argTypes[i]);
                 replaced = false;
                 for (Expression replacement : replacements) {
-                    f.getArgs()[i] = replacement;
+                    f.args[i] = replacement;
                     if (checkClean()) {
                         replaced = true;
                         break;
                     }
                 }
                 if (!replaced)
-                    f.getArgs()[i] = original;
-                quickCleanExpression(f.getArgs()[i]);
+                    f.args[i] = original;
+                quickCleanExpression(f.args[i]);
             }
         } else if (exp instanceof OpExpression) {
             OpExpression o = (OpExpression) exp;
 
             if (o.getLeft() != null && o.getType().equals(int.class)) {
-                if (o.getOp() == Op.MINUS && o.getLeft() instanceof LiteralExpression && ((LiteralExpression) o.getLeft()).getLiteral().equals(0)) {
-                    o.setOp(Op.TIMES);
+                if (o.op() == Op.MINUS && o.getLeft() instanceof LiteralExpression && ((LiteralExpression) o.getLeft()).literal.equals(0)) {
+                    o.op(Op.TIMES);
                     o.setLeft(new LiteralExpression(-1, int.class));
-                } else if ((o.getOp() == Op.TIMES || o.getOp() == Op.DIV) && o.getRight() instanceof LiteralExpression && ((LiteralExpression) o.getRight()).getLiteral().equals(-1)) {
+                } else if ((o.op() == Op.TIMES || o.op() == Op.DIV) && o.getRight() instanceof LiteralExpression && ((LiteralExpression) o.getRight()).literal.equals(-1)) {
                     Expression neg1 = o.getRight();
                     o.setRight(o.getLeft());
                     o.setLeft(neg1);
-                    o.setOp(Op.TIMES);
+                    o.op(Op.TIMES);
                 }
             }
 
@@ -221,7 +221,7 @@ public class Cleaner {
 
         if (s instanceof ForLoop) {
             ForLoop f = (ForLoop) s;
-            quickCleanBlock(f.getBody());
+            quickCleanBlock(f.body);
             if (!f.isAngelic()) {
                 original = f.getCondition();
                 replacements = getReplacements(original);
@@ -239,7 +239,7 @@ public class Cleaner {
             }
         } else if (s instanceof IfStatement) {
             IfStatement i = (IfStatement) s;
-            quickCleanBlock(i.getBody());
+            quickCleanBlock(i.body);
             if (!i.isAngelic()) {
                 original = i.getCondition();
                 replacements = getReplacements(original);
@@ -256,7 +256,7 @@ public class Cleaner {
                 quickCleanExpression(i.getCondition());
             }
         } else if (s instanceof ForEachLoop) {
-            quickCleanBlock(((ForEachLoop) s).getBody());
+            quickCleanBlock(((ForEachLoop) s).body);
         } else if (s instanceof VarAssignment) {
             VarAssignment v = (VarAssignment) s;
             original = v.getValue();
@@ -273,7 +273,7 @@ public class Cleaner {
                 v.setValue(original);
             quickCleanExpression(v.getValue());
         } else if (s instanceof FuncStatement) {
-            quickCleanExpression(((FuncStatement) s).getFunc());
+            quickCleanExpression(((FuncStatement) s).func);
         } else {
             System.out.println("Unknown statement class in cleanStatement");
         }
@@ -303,10 +303,10 @@ public class Cleaner {
                     }
                 }
 
-                block.addAll(i, f.getBody());
+                block.addAll(i, f.body);
                 if (checkClean())
                     continue;
-                for (int j = 0; j < f.getBody().size(); j++)
+                for (int j = 0; j < f.body.size(); j++)
                     block.remove(i);
             } else if (s instanceof IfStatement) {
                 IfStatement is = (IfStatement) s;
@@ -325,21 +325,21 @@ public class Cleaner {
                     }
                 }
 
-                block.addAll(i, is.getBody());
+                block.addAll(i, is.body);
                 if (checkClean())
                     continue;
-                for (int j = 0; j < is.getBody().size(); j++)
+                for (int j = 0; j < is.body.size(); j++)
                     block.remove(i);
             } else if (s instanceof ForEachLoop) {
                 ForEachLoop f = (ForEachLoop) s;
                 Set<String> used = new HashSet<>();
-                for (Statement inner : f.getBody())
+                for (Statement inner : f.body)
                     ProgramUtils.getUsedVars(inner, used, true);
                 if (!used.contains(f.getVarName())) {
-                    block.addAll(i, f.getBody());
+                    block.addAll(i, f.body);
                     if (checkClean())
                         continue;
-                    for (int j = 0; j < f.getBody().size(); j++)
+                    for (int j = 0; j < f.body.size(); j++)
                         block.remove(i);
                 }
             } else if (s instanceof VarAssignment) {
@@ -404,8 +404,8 @@ public class Cleaner {
 
     private Expression deepCleanExpressionReplacement(Expression original, int size) {
         return Utils.randBoolean(0.75) ?
-                program.getExpressionGenerator().newOrSimilar(original, size + Settings.SIMILAR_NEW_EXTRA_SIZE) :
-                    program.getExpressionGenerator().genAnyExp(size + Settings.SIMILAR_NEW_EXTRA_SIZE, original.getType(), false);
+                program.expressionGenerator.newOrSimilar(original, size + Settings.SIMILAR_NEW_EXTRA_SIZE) :
+                    program.expressionGenerator.genAnyExp(size + Settings.SIMILAR_NEW_EXTRA_SIZE, original.getType(), false);
     }
 
     private void deepCleanBlock(List<Statement> block, long timeout) {
@@ -413,8 +413,8 @@ public class Cleaner {
             Statement original = block.get(i);
             int originalSize = ProgramUtils.size(original);
             Statement replacement = (Utils.randBoolean(0.75) ?
-                    program.getStatementGenerator().newOrSimilar(original, originalSize + Settings.SIMILAR_NEW_EXTRA_SIZE) :
-                        program.getStatementGenerator().genStatement(originalSize + Settings.SIMILAR_NEW_EXTRA_SIZE,
+                    program.statementGenerator.newOrSimilar(original, originalSize + Settings.SIMILAR_NEW_EXTRA_SIZE) :
+                        program.statementGenerator.genStatement(originalSize + Settings.SIMILAR_NEW_EXTRA_SIZE,
                                 new StatementCategory[] {StatementCategory.ASSIGN, StatementCategory.FUNC}, original.getIndent(), false));
 
             if (replacement != null) {
@@ -430,7 +430,7 @@ public class Cleaner {
 
             if (s instanceof ForLoop) {
                 ForLoop f = (ForLoop) s;
-                IfStatement is = new IfStatement(f.getCondition(), f.getBody(), f.getIndent());
+                IfStatement is = new IfStatement(f.getCondition(), f.body, f.getIndent());
                 block.set(i, is);
                 if (!checkClean())
                     block.set(i, f);
@@ -452,7 +452,7 @@ public class Cleaner {
                             f.setCondition(originalCond);
                     }
                 }
-                deepCleanBlock(f.getBody(), timeout);
+                deepCleanBlock(f.body, timeout);
                 program.removeFromScope(f.getVarName());
             } else if (s instanceof IfStatement) {
                 IfStatement is = (IfStatement) s;
@@ -467,11 +467,11 @@ public class Cleaner {
                             is.setCondition(originalCond);
                     }
                 }
-                deepCleanBlock(is.getBody(), timeout);
+                deepCleanBlock(is.body, timeout);
             } else if (s instanceof ForEachLoop) {
                 ForEachLoop f = (ForEachLoop) s;
                 program.addToScope(f.getVarName());
-                deepCleanBlock(f.getBody(), timeout);
+                deepCleanBlock(f.body, timeout);
                 program.removeFromScope(f.getVarName());
             }
         }
@@ -491,11 +491,11 @@ public class Cleaner {
                         program.declareLoopVarInLoop(f.getVarName());
                     }
                 }
-                cleanLoopCounters(f.getBody());
+                cleanLoopCounters(f.body);
             } else if (s instanceof IfStatement) {
-                cleanLoopCounters(((IfStatement) s).getBody());
+                cleanLoopCounters(((IfStatement) s).body);
             } else if (s instanceof ForEachLoop) {
-                cleanLoopCounters(((ForEachLoop) s).getBody());
+                cleanLoopCounters(((ForEachLoop) s).body);
             }
         }
     }
@@ -506,11 +506,11 @@ public class Cleaner {
                 ForLoop f = (ForLoop) s;
                 if (!actuallyUsed.contains(f.getVarName()))
                     f.setWhileLoop(true);
-                makeWhileLoops(f.getBody(), actuallyUsed);
+                makeWhileLoops(f.body, actuallyUsed);
             } else if (s instanceof IfStatement) {
-                makeWhileLoops(((IfStatement) s).getBody(), actuallyUsed);
+                makeWhileLoops(((IfStatement) s).body, actuallyUsed);
             } else if (s instanceof ForEachLoop) {
-                makeWhileLoops(((ForEachLoop) s).getBody(), actuallyUsed);
+                makeWhileLoops(((ForEachLoop) s).body, actuallyUsed);
             }
         }
     }

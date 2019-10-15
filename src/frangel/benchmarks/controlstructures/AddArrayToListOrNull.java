@@ -1,6 +1,7 @@
 package frangel.benchmarks.controlstructures;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 import frangel.Example;
@@ -60,8 +61,7 @@ public enum AddArrayToListOrNull implements TaskCreator {
     static List<Object> solution(Object[] arr, List<Object> list) {
         if (list == null)
             list = new ArrayList<>();
-        for (Object o : arr)
-            list.add(o);
+		list.addAll(Arrays.asList(arr));
         return list;
     }
 }

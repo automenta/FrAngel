@@ -11,37 +11,37 @@ import frangel.utils.Utils;
 
 public class FrAngelResult {
     // Crucial info
-    private String name; // task name
-    private boolean success;
-    private double time; // in seconds
-    private String program;
-    private String group;
+    public final String name; // task name
+    private final boolean success;
+    private final double time; // in seconds
+    private final String program;
+    private final String group;
 
     // Other data
-    private int numExamples;
-    private int numComponents;
-    private int programSize;
-    private String simpleProgram; // without packages
-    private boolean sypetMode;
-    private List<String> tags;
-    private String alg;
+    private final int numExamples;
+    private final int numComponents;
+    private final int programSize;
+    private final String simpleProgram; // without packages
+    private final boolean sypetMode;
+    private final List<String> tags;
+    private final String alg;
 
-    private String unCleanedProgram;
-    private int unCleanedProgramSize;
+    private final String unCleanedProgram;
+    private final int unCleanedProgramSize;
 
     private int numRememberedPrograms;
-    private int numFragments;
-    private double averageFragmentUsefulness; // for each fragment, the largest fraction of its nodes that match the program
+    private final int numFragments;
+    private final double averageFragmentUsefulness; // for each fragment, the largest fraction of its nodes that match the program
 
-    private int numProgramsGen;
-    private int numProgramsRun;
-    private int numAngelicGen;
-    private int numAngelicRun;
-    private int numNonAngelicGen;
-    private int numNonAngelicRun;
+    private final int numProgramsGen;
+    private final int numProgramsRun;
+    private final int numAngelicGen;
+    private final int numAngelicRun;
+    private final int numNonAngelicGen;
+    private final int numNonAngelicRun;
 
     public FrAngelResult(FrAngel frangel, Program program, double time, String unCleanedProgram, int unCleanedProgramSize) {
-        SynthesisTask task = frangel.getSynthesisTask();
+        SynthesisTask task = frangel.task;
         name = task.getName();
         group = task.getGroup();
         success = program != null;
@@ -73,7 +73,7 @@ public class FrAngelResult {
         numRememberedPrograms = 0;
         if (Settings.MINE_FRAGMENTS) {
             numRememberedPrograms = frangel.getFragmentPrograms().size();
-            List<Object> allFragments = new ArrayList<Object>();
+            List<Object> allFragments = new ArrayList<>();
             for (List<Expression> list : frangel.getExpressionFragments().values())
                 allFragments.addAll(list);
             allFragments.addAll(frangel.getStatementFragments());
@@ -140,9 +140,6 @@ public class FrAngelResult {
         }
     }
 
-    public String getName() {
-        return name;
-    }
     public boolean isSuccess() {
         return success;
     }

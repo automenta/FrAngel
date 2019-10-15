@@ -18,10 +18,8 @@ import frangel.model.FunctionData;
 import frangel.model.expression.*;
 
 public class Utils {
-    private static Random rand = new Random();
-    static {
-//        rand.setSeed(123);
-    }
+    private static final Random rand = new Random();
+    public static final Expression[] EmptyExpressionArray = new Expression[0];
 
     public static String stringFromFile(String filename) {
         try {
@@ -31,16 +29,14 @@ public class Utils {
         }
     }
 
-    public static boolean stringToFile(String str, String filename) {
+    public static void stringToFile(String str, String filename) {
         try {
             PrintWriter out = new PrintWriter(new FileWriter(filename));
             out.print(str);
             out.close();
         } catch (Exception e) {
             System.err.println("Error writing to file " + filename);
-            return false;
         }
-        return true;
     }
 
     public static Class<?> classFromString(String s) throws ClassNotFoundException {
@@ -91,9 +87,9 @@ public class Utils {
 
     // returned set includes the given class
     public static Set<Class<?>> getSuperTypes(Class<?> cls) {
-        Queue<Class<?>> q = new ArrayDeque<Class<?>>();
+        Queue<Class<?>> q = new ArrayDeque<>();
         q.add(cls);
-        Set<Class<?>> superTypes = new HashSet<Class<?>>();
+        Set<Class<?>> superTypes = new HashSet<>();
         superTypes.add(cls);
         while (!q.isEmpty()) {
             Class<?> cur = q.poll();
@@ -232,7 +228,7 @@ public class Utils {
     }
 
     public static String toCharLiteral(char c) {
-        return toCharLiteral(c + "");
+        return toCharLiteral(String.valueOf(c));
     }
 
     public static String toCharLiteral(String c) {
@@ -245,9 +241,9 @@ public class Utils {
         Class<?> ans = parameterTypeMap.get(cls);
         if (ans != null)
             return ans;
-        for (Class<?> key : parameterTypeMap.keySet())
-            if (key.isAssignableFrom(cls))
-                return parameterTypeMap.get(key);
+        for (Map.Entry<Class<?>, Class<?>> entry : parameterTypeMap.entrySet())
+            if (entry.getKey().isAssignableFrom(cls))
+                return entry.getValue();
         return Object.class;
     }
 
@@ -352,7 +348,7 @@ public class Utils {
             for (Constructor<?> c : cls.getConstructors()) {
                 if (Modifier.isPublic(c.getModifiers()) && c.getParameterCount() == 0) {
                     FunctionData data = new FunctionData(c, Utils.getParameterTypeForClass(cls, task.getParameterTypeMap()));
-                    return new FuncExpression(new Expression[0], null, data);
+                    return new FuncExpression(EmptyExpressionArray, null, data);
                 }
             }
             return new LiteralExpression(null, cls);

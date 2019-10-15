@@ -36,13 +36,13 @@ public enum ArrayIntersection implements TaskCreator {
         task.addExample(new Example()
                 .setInputs(() -> new Object[] {
                         new String[] {"abc", "x", "hi"},
-                        new String[] {new String("hi"), new String("x")},
+                        new String[] {"hi", "x"},
                 })
                 .setOutput(BenchmarkUtils.makeSet("hi", "x")));
 
         task.addExample(new Example()
                 .setInputs(() -> new Object[] {
-                        new String[] {new String("hi"), new String("x")},
+                        new String[] {"hi", "x"},
                         new String[] {"abc", "x", "hi"},
                 })
                 .setOutput(BenchmarkUtils.makeSet("hi", "x")));
@@ -50,7 +50,7 @@ public enum ArrayIntersection implements TaskCreator {
         task.addExample(new Example()
                 .setInputs(() -> new Object[] {
                         new String[] {" hi", "x", "hi!"},
-                        new String[] {"hi", new String("x")},
+                        new String[] {"hi", "x"},
                 })
                 .setOutput(BenchmarkUtils.makeSet("x")));
 

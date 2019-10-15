@@ -1,5 +1,6 @@
 package frangel.benchmarks.controlstructures;
 
+import java.util.Arrays;
 import java.util.HashSet;
 
 import frangel.Example;
@@ -58,9 +59,7 @@ public enum CountUnique implements TaskCreator {
     }
 
     static int solution(String[] arr) {
-        HashSet<String> set = new HashSet<>();
-        for (String s : arr)
-            set.add(s);
+        HashSet<String> set = new HashSet<>(Arrays.asList(arr));
         return set.size();
     }
 }
